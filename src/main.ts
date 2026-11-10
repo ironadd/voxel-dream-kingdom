@@ -209,17 +209,17 @@ async function bootstrap() {
   });
 
   // 漫步模式下点击景点按钮直接实地魔法传送到该景点平台！
-  const WALK_SPAWNS: Record<string, [number, number, number]> = {
-    panorama: [0.5, 13.05, 22.5],
-    frost: [0.5, 83.05, -62.5],
-    clockwork: [53.5, 37.05, 38.5],
-    amusement: [-12.5, 13.05, 37.5],
-    celestial: [0.5, 18.05, -6.5],
-    castle: [0.5, 23.05, -15.5],
-    plaza: [0.5, 13.05, 21.5],
-    windmill: [29.5, 16.05, 18.5],
-    rainbow: [54.5, 26.05, -11.5],
-    sakura: [-31.5, 14.05, 12.5],
+  const WALK_SPAWNS: Record<string, [number, number, number, number, number, number]> = {
+    panorama: [0.5, 13.05, 22.5, 0, 36, -28],
+    frost: [0.5, 83.05, -63.5, 0.5, 87, -88],
+    clockwork: [69.5, 39.05, 22.5, 78, 56, 22],
+    amusement: [-12.5, 13.05, 35.5, -14, 22, 42],
+    celestial: [0.5, 18.05, -6.5, 0, 88, -68],
+    castle: [0.5, 23.05, -15.5, 0, 38, -36],
+    plaza: [0.5, 13.05, 21.5, 0.5, 17, 15.5],
+    windmill: [29.5, 16.05, 18.5, 36, 26, 18],
+    rainbow: [54.5, 26.05, -11.5, 64, 34, -12],
+    sakura: [-31.5, 14.05, 12.5, -38, 22, 12],
   };
 
   const landmarkButtons = document.querySelectorAll<HTMLButtonElement>('[data-landmark]');
@@ -230,9 +230,9 @@ async function bootstrap() {
       if (!lm) return;
       landmarkButtons.forEach((b) => b.classList.toggle('active', b === btn));
       if (cameraMode === 'walk' && WALK_SPAWNS[key]) {
-        const [sx, sy, sz] = WALK_SPAWNS[key];
+        const [sx, sy, sz, lx, ly, lz] = WALK_SPAWNS[key];
         musicBox.playInteractChime();
-        explorer.teleportTo(sx, sy, sz, lm.target);
+        explorer.teleportTo(sx, sy, sz, new THREE.Vector3(lx, ly, lz));
         dynamicWorld.spawnMiniSparkles(new THREE.Vector3(sx, sy + 1, sz), '#7af5ff', 24);
       } else {
         flyToLandmark(lm.position, lm.target);

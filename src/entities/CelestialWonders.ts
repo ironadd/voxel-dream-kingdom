@@ -239,11 +239,11 @@ export class CelestialWonders {
       }
 
       g.add(bell, tentacles);
-      const angle = (i / 14) * Math.PI * 2;
-      const r = 56 + (i % 3) * 14;
+      const angle = (i / 14) * Math.PI * 2 + 0.25;
+      const r = 106 + (i % 4) * 14;
       const basePos = new THREE.Vector3(
         Math.cos(angle) * r,
-        24 + (i % 5) * 8,
+        32 + (i % 5) * 9,
         Math.sin(angle) * r
       );
       g.position.copy(basePos);
@@ -323,7 +323,7 @@ export class CelestialWonders {
     this.group.add(this.phoenixRoot);
   }
 
-  /** 4. 构建黄金星晷齿轮钟塔的三大啮合旋转像素黄金齿轮与摇摆钟摆 */
+  /** 4. 构建黄金星晷齿轮钟塔的三大啮合旋转像素黄金齿轮与摇摆钟摆（零穿模精确外表面贴合！） */
   private buildClockworkMechanisms(): void {
     const goldMat = new THREE.MeshStandardMaterial({
       color: '#ffd166',
@@ -339,57 +339,100 @@ export class CelestialWonders {
       roughness: 0.38,
       metalness: 0.5,
     });
-    const glowHandMat = new THREE.MeshBasicMaterial({ color: '#2b2d42' });
+    const glowHandMat = new THREE.MeshBasicMaterial({ color: '#1d223b' });
 
-    const createPixelGear = (radius: number, teeth: number, mat: THREE.Material) => {
+    // 在 XY 平面内构建标准正齿轮（绕本地 Z 轴旋转，方便平行贴合南外墙且精确啮合！）
+    const createXYPixelGear = (radius: number, teeth: number, mat: THREE.Material) => {
       const g = new THREE.Group();
-      // 十字辐条与轮圈（YZ 平面绕 X 轴旋转）
-      const hub = new THREE.Mesh(new THREE.BoxGeometry(0.65, radius * 0.55, radius * 0.55), mat);
-      const spokeV = new THREE.Mesh(new THREE.BoxGeometry(0.42, radius * 1.85, 0.55), mat);
-      const spokeH = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.55, radius * 1.85), mat);
+      const hub = new THREE.Mesh(new THREE.BoxGeometry(radius * 0.52, radius * 0.52, 0.65), mat);
+      const spokeV = new THREE.Mesh(new THREE.BoxGeometry(0.52, radius * 1.88, 0.42), mat);
+      const spokeH = new THREE.Mesh(new THREE.BoxGeometry(radius * 1.88, 0.52, 0.42), mat);
       g.add(hub, spokeV, spokeH);
 
       for (let i = 0; i < teeth; i++) {
         const a = (i / teeth) * Math.PI * 2;
         const rimSeg = new THREE.Mesh(
-          new THREE.BoxGeometry(0.48, (radius * 2 * Math.PI) / teeth * 0.65, 0.75),
+          new THREE.BoxGeometry(((radius * 2 * Math.PI) / teeth) * 0.66, 0.68, 0.48),
           mat
         );
-        rimSeg.position.set(0, Math.sin(a) * radius, Math.cos(a) * radius);
-        rimSeg.rotation.x = -a;
+        rimSeg.position.set(Math.cos(a) * radius, Math.sin(a) * radius, 0);
+        rimSeg.rotation.z = a + Math.PI / 2;
 
-        const tooth = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.72, 0.85), mat);
-        tooth.position.set(0, Math.sin(a) * (radius + 0.55), Math.cos(a) * (radius + 0.55));
-        tooth.rotation.x = -a;
+        const tooth = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.78, 0.54), mat);
+        tooth.position.set(
+          Math.cos(a) * (radius + 0.52),
+          Math.sin(a) * (radius + 0.52),
+          0
+        );
+        tooth.rotation.z = a + Math.PI / 2;
         g.add(rimSeg, tooth);
       }
       return g;
     };
 
-    const [dx, dy, dz] = this.hooks.clockTowerDial;
-    // 外挂在钟塔南侧与西侧外墙上的三枚巨大啮合像素齿轮
-    this.gearLarge = createPixelGear(4.6, 12, goldMat);
-    this.gearLarge.position.set(dx + 0.2, dy - 7.5, dz + 5.8);
-    this.gearLarge.rotation.y = Math.PI / 2;
+    const [tcx, tbase, tcz] = this.hooks.clockTowerCenter;
+    // 表盘室南外墙体素 z = tcz + 5 的 +Z 外表面精确位于 Z = tcz + 6.0！
+    // 将整套三连啮合齿轮平行安装在 Z = tcz + 6.55 平面，并用实心传动轴连回塔墙！
+    const gearPlaneZ = tcz + 6.55;
 
-    this.gearMedium = createPixelGear(3.1, 8, bronzeMat);
-    this.gearMedium.position.set(dx + 5.2, dy - 3.2, dz + 5.9);
-    this.gearMedium.rotation.y = Math.PI / 2;
+    const r1 = 3.4; // 12 齿
+    const r2 = 2.3; // 8 齿
+    const r3 = 1.75; // 6 齿
 
-    this.gearSmall = createPixelGear(2.2, 6, goldMat);
-    this.gearSmall.position.set(dx - 0.2, dy + 4.8, dz - 3.8);
+    const g1x = tcx - 1.4;
+    const g1y = tbase + 11.2;
 
-    // 表盘时针与分针
+    const ang12 = 0.62;
+    const dist12 = r1 + r2 + 0.52;
+    const g2x = g1x + Math.cos(ang12) * dist12;
+    const g2y = g1y + Math.sin(ang12) * dist12;
+
+    const ang23 = 2.18;
+    const dist23 = r2 + r3 + 0.48;
+    const g3x = g2x + Math.cos(ang23) * dist23;
+    const g3y = g2y + Math.sin(ang23) * dist23;
+
+    this.gearLarge = createXYPixelGear(r1, 12, goldMat);
+    this.gearLarge.position.set(g1x, g1y, gearPlaneZ);
+
+    this.gearMedium = createXYPixelGear(r2, 8, bronzeMat);
+    this.gearMedium.position.set(g2x, g2y, gearPlaneZ);
+    this.gearMedium.rotation.z = Math.PI / 8; // 错半齿完美咬合！
+
+    this.gearSmall = createXYPixelGear(r3, 6, goldMat);
+    this.gearSmall.position.set(g3x, g3y, gearPlaneZ);
+
+    // 传动支撑金属横轴（连接塔体与三枚齿轮圆心，扎实不悬空！）
+    for (const [ax, ay] of [
+      [g1x, g1y],
+      [g2x, g2y],
+      [g3x, g3y],
+    ]) {
+      const axle = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.65, 2.2), bronzeMat);
+      axle.position.set(ax, ay, gearPlaneZ - 0.9);
+      this.group.add(axle);
+    }
+
+    // 西侧主星盘表盘指针：体素 x = tcx - 5 的 -X 外表面精确在 X = tcx - 5.0！
+    // 表盘圆心精确在 (tcx - 5.0, tbase + 20.5, tcz + 0.5)
+    const dialX = tcx - 5.0;
+    const dialY = tbase + 20.5;
+    const dialZ = tcz + 0.5;
+
+    const dialCap = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.65, 0.65), goldMat);
+    dialCap.position.set(dialX - 0.12, dialY, dialZ);
+    this.group.add(dialCap);
+
     this.clockMinuteHand = new THREE.Group();
-    this.clockMinuteHand.position.set(dx - 0.15, dy + 0.5, dz + 0.5);
-    const minBar = new THREE.Mesh(new THREE.BoxGeometry(0.25, 2.5, 0.28), glowHandMat);
-    minBar.position.y = 1.1;
+    this.clockMinuteHand.position.set(dialX - 0.24, dialY, dialZ);
+    const minBar = new THREE.Mesh(new THREE.BoxGeometry(0.16, 2.35, 0.24), glowHandMat);
+    minBar.position.y = 1.05;
     this.clockMinuteHand.add(minBar);
 
     this.clockHourHand = new THREE.Group();
-    this.clockHourHand.position.set(dx - 0.22, dy + 0.5, dz + 0.5);
-    const hourBar = new THREE.Mesh(new THREE.BoxGeometry(0.28, 1.7, 0.35), bronzeMat);
-    hourBar.position.y = 0.75;
+    this.clockHourHand.position.set(dialX - 0.34, dialY, dialZ);
+    const hourBar = new THREE.Mesh(new THREE.BoxGeometry(0.16, 1.55, 0.32), bronzeMat);
+    hourBar.position.y = 0.68;
     this.clockHourHand.add(hourBar);
 
     // 镂空中段摇摆黄金星摆
@@ -535,19 +578,19 @@ export class CelestialWonders {
     this.group.add(this.carouselCanopy);
   }
 
-  /** 6. 构建《千与千寻》风「云海银河星轨与复古像素蒸汽列车」 */
+  /** 6. 构建《千与千寻》风「云海银河星轨与复古像素蒸汽列车」（净空外海环岛轨道，零穿模！） */
   private buildGalacticSkyTrain(): void {
-    // 环绕整座主岛与东侧浮岛群的优雅闭合星轨
+    // 严格沿着浮空群岛外侧净空云海走廊铺设，仅在南崖最外沿月台优雅停靠擦过！
     this.railCurve = new THREE.CatmullRomCurve3(
       [
-        new THREE.Vector3(8, 22.4, 41),     // 南岸候车小月台
-        new THREE.Vector3(-24, 21.5, 48),   // 掠过星梦摩天轮南侧云海
-        new THREE.Vector3(-56, 25.0, 14),   // 掠过千年绯樱神木外海
-        new THREE.Vector3(-48, 34.0, -32),  // 攀升掠过仙樱浮岛与雪峰
-        new THREE.Vector3(0, 36.0, -60),    // 掠过皇家圣城北后方（仰望冰宫绝佳位）
-        new THREE.Vector3(46, 33.0, -24),   // 穿行于彩虹星桥高空旁
-        new THREE.Vector3(50, 32.0, 22),    // 掠过花海风车与黄金齿轮钟塔之间
-        new THREE.Vector3(32, 24.5, 42),    // 缓缓降回南岸小月台
+        new THREE.Vector3(8.5, 18.2, 51.2),   // 紧贴南崖高架候车亭外侧 (z=49 之外)
+        new THREE.Vector3(-28, 20.0, 56.0),   // 绕过摩天轮南侧外海
+        new THREE.Vector3(-74, 26.0, 12.0),   // 绕过灯塔岛与樱花林外侧云海
+        new THREE.Vector3(-72, 38.0, -48.0),  // 绕过西北仙樱小浮岛外侧
+        new THREE.Vector3(0, 44.0, -60.0),    // 从皇家圣城后方与冰宫天梯下方净空穿过
+        new THREE.Vector3(84, 34.0, -24.0),   // 绕过紫晶星象岛东侧外海
+        new THREE.Vector3(56, 26.0, 22.0),    // 穿行于花海风车岛与东南黄金钟塔岛之间的宽阔海峡！
+        new THREE.Vector3(38, 20.0, 50.0),    // 沿着南侧瀑布外海平滑驶回南崖月台
       ],
       true,
       'catmullrom',
@@ -693,15 +736,15 @@ export class CelestialWonders {
       return mesh;
     };
 
-    // 托起九霄凌霄冰霜神殿的巨型双层反向旋转极寒星阵 (cx=0, y=58, cz=-82)
-    this.frostCircleOuter = createCircleMesh(56, '#5cf2ff');
-    this.frostCircleOuter.position.set(0, 58.5, -82);
-    this.frostCircleInner = createCircleMesh(36, '#a890ff');
-    this.frostCircleInner.position.set(0, 61.5, -82);
+    // 托起九霄凌霄冰霜神殿的巨型双层反向旋转极寒星阵（置于底部母晶尖端 Y=54 下方，零穿刺！）
+    this.frostCircleOuter = createCircleMesh(58, '#5cf2ff');
+    this.frostCircleOuter.position.set(0, 50.0, -82);
+    this.frostCircleInner = createCircleMesh(38, '#a890ff');
+    this.frostCircleInner.position.set(0, 52.0, -82);
 
-    // 紫晶星象台高空共鸣星金法阵
+    // 紫晶星象台高空共鸣星金法阵（抬升至星环上方净空）
     this.astralCircle = createCircleMesh(26, '#ffd666');
-    this.astralCircle.position.set(64.5, 43.5, -11.5);
+    this.astralCircle.position.set(64.5, 45.5, -11.5);
 
     this.group.add(this.frostCircleOuter, this.frostCircleInner, this.astralCircle);
   }
@@ -731,12 +774,12 @@ export class CelestialWonders {
       jf.tentacles.scale.y = 1 + pulse * 0.18;
     }
 
-    // 3. 涅槃流火凤凰展翼盘旋
+    // 3. 涅槃流火凤凰展翼盘旋（抬升至高空 Y=92，远高于钟塔尖顶 Y=78，与冰龙遥望！）
     const phAngle = elapsed * 0.36;
-    const phX = 56 + Math.cos(phAngle) * 26;
+    const phX = 62 + Math.cos(phAngle) * 28;
     const phZ = 8 + Math.sin(phAngle) * 32;
-    const phY = 74 + Math.sin(elapsed * 1.4) * 6.5;
-    const nextPhX = 56 + Math.cos(phAngle + 0.05) * 26;
+    const phY = 92 + Math.sin(elapsed * 1.4) * 6.0;
+    const nextPhX = 62 + Math.cos(phAngle + 0.05) * 28;
     const nextPhZ = 8 + Math.sin(phAngle + 0.05) * 32;
     this.phoenixRoot.position.set(phX, phY, phZ);
     this.phoenixRoot.lookAt(nextPhX, phY, nextPhZ);
@@ -748,11 +791,11 @@ export class CelestialWonders {
       tail.rotation.y = Math.cos(elapsed * 4.5 + idx) * 0.15;
     });
 
-    // 4. 黄金星晷齿轮精确反向啮合旋转 & 钟摆摇曳
+    // 4. 黄金星晷齿轮绕 Z 轴精确反向啮合旋转 & 钟摆摇曳
     const gSpeed = elapsed * 0.55;
-    this.gearLarge.rotation.x = gSpeed;
-    this.gearMedium.rotation.x = -gSpeed * (12 / 8); // 按齿数精确啮合比！
-    this.gearSmall.rotation.x = gSpeed * 2.0;
+    this.gearLarge.rotation.z = gSpeed;
+    this.gearMedium.rotation.z = -gSpeed * (12 / 8) + Math.PI / 8;
+    this.gearSmall.rotation.z = gSpeed * (12 / 6);
     this.clockMinuteHand.rotation.x = -elapsed * 0.35;
     this.clockHourHand.rotation.x = -elapsed * 0.04;
     this.clockPendulum.rotation.z = Math.sin(elapsed * 2.2) * 0.34;

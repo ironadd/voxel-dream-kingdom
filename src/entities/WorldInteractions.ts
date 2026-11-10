@@ -64,20 +64,20 @@ export class WorldInteractions {
     }[] = [
       {
         pos: [10.5, 13.05, 14.5],
-        dest: [0.5, 83.05, -62.5],
-        look: [0.5, 98, -82],
+        dest: [0.5, 83.05, -63.5],
+        look: [0.5, 89, -86],
         color: '#66f2ff',
         label: '踏入星界法阵 · 传送至「❄️ 九霄凌霄冰霜神殿」',
       },
       {
-        pos: [0.5, 83.05, -61.5],
-        dest: [55.5, 37.05, 35.5],
-        look: [60, 52, 38],
+        pos: [5.5, 83.05, -65.5],
+        dest: [69.5, 39.05, 22.5],
+        look: [78, 56, 22],
         color: '#ffd166',
         label: '踏入冰晶法阵 · 传送至「⚙️ 黄金星晷齿轮钟塔岛」',
       },
       {
-        pos: [54.5, 37.05, 35.5],
+        pos: [67.5, 39.05, 25.5],
         dest: [58.5, 26.05, -11.5],
         look: [64, 34, -12],
         color: '#c77dff',
@@ -282,10 +282,10 @@ export class WorldInteractions {
       };
     }
 
-    // 6. 云海银河蒸汽列车南岸候车小站 (x ≈ 7.5, z ≈ 40)
-    const stationGround = new THREE.Vector3(7.5, 13, 40.5);
-    const stationPlatform = new THREE.Vector3(7.5, 22, 40.5);
-    if (pPos.distanceTo(stationGround) < 5.8 || pPos.distanceTo(stationPlatform) < 5.8) {
+    // 6. 云海银河蒸汽列车南崖候车亭 (x ≈ 8.5, z ≈ 46)
+    const stationStairs = new THREE.Vector3(8.5, 13, 41.5);
+    const stationPlatform = new THREE.Vector3(8.5, 18, 47.0);
+    if (pPos.distanceTo(stationStairs) < 4.5 || pPos.distanceTo(stationPlatform) < 5.8) {
       return {
         prompt: '🚂 按 [E] 登乘「云海银河蒸汽列车」环游全岛星轨',
         execute: () => {
@@ -295,6 +295,25 @@ export class WorldInteractions {
             '🚂 云海银河号列车长',
             '呜——欢迎登车！转动鼠标可自由欣赏窗外的冰霜神殿、星云巨鲸与黄金钟塔！',
             5.0
+          );
+        },
+      };
+    }
+
+    // 6.5 九霄凌霄冰宫内殿尽头：「冰封星冕王座」互动 (0.5, 85, -88.5)
+    const frostThrone = new THREE.Vector3(0.5, 85, -88.5);
+    if (pPos.distanceTo(frostThrone) < 5.5) {
+      return {
+        prompt: '👑 按 [E] 端坐「九霄冰封星冕王座」· 号令极光星陨',
+        execute: () => {
+          this.audio.playInteractChime();
+          this.explorer.teleportTo(0.5, 85.05, -88.5, new THREE.Vector3(0.5, 86, -65));
+          this.sky.summonMeteorShower();
+          this.celestialWonders.triggerArcaneResonance();
+          this.showBubble(
+            '👑 凛冬星冕之主',
+            '你端坐于九霄冰封王座之上，殿外漫天星陨与太古魔法阵为你齐声共鸣！',
+            5.5
           );
         },
       };

@@ -218,20 +218,25 @@ export class DynamicWorld {
       opacity: 0.9,
     });
 
-    for (let i = 0; i < 38; i++) {
+    for (let i = 0; i < 36; i++) {
       const cg = new THREE.Group();
-      const angle = (i / 38) * Math.PI * 2 + (i % 3) * 0.2;
-      const isHighCelestial = i >= 26;
-      const dist = isHighCelestial
-        ? 38 + (i % 5) * 16
-        : i < 10
-        ? 45 + (i % 4) * 14
-        : 78 + (i % 5) * 18;
-      const baseY = isHighCelestial
-        ? 66 + (i % 4) * 9
-        : i < 10
-        ? -24 - (i % 3) * 5
-        : 8 + (i % 6) * 9;
+      const startX = -130 + (i * 23) % 260;
+      let zPos: number;
+      let baseY: number;
+
+      if (i < 16) {
+        // 脚下深渊云海（位于主浮空岛底端以下，托起整座天空王国，绝不穿建筑！）
+        zPos = -95 + (i * 13) % 185;
+        baseY = -26 - (i % 4) * 4.5;
+      } else if (i < 26) {
+        // 北境九霄远景仙云（位于凌霄冰霜神殿后方 Z < -122 净空）
+        zPos = -126 - (i % 5) * 14;
+        baseY = 68 + (i % 5) * 11;
+      } else {
+        // 南境远海晴云（位于南岸外海 Z > 74 净空）
+        zPos = 76 + (i % 4) * 14;
+        baseY = 12 + (i % 4) * 8;
+      }
 
       const w = 8 + (i % 4) * 3.5;
       const d = 5 + (i % 3) * 2.2;
@@ -248,11 +253,7 @@ export class DynamicWorld {
       sidePuff.position.set(-w * 0.35, -0.2, d * 0.25);
 
       cg.add(mainBlock, topPuff, sidePuff);
-      cg.position.set(
-        Math.cos(angle) * dist,
-        baseY,
-        Math.sin(angle) * dist - (isHighCelestial ? 68 : 0)
-      );
+      cg.position.set(startX, baseY, zPos);
       this.group.add(cg);
       this.clouds.push({
         group: cg,
@@ -263,12 +264,12 @@ export class DynamicWorld {
     }
   }
 
-  /** 5. 彩色像素热气球与巡航小飞艇 */
+  /** 5. 彩色像素热气球与巡航小飞艇（外环净空轨道，远离雪峰、钟塔与冰宫） */
   private buildHotAirBalloonsAndAirship(): void {
     const balloonThemes: [string, string, number, number, number][] = [
-      ['#ff85c0', '#fff0f6', 62, 46, 0.09],
-      ['#69c0ff', '#fffbe6', 74, 36, -0.07],
-      ['#b37feb', '#ffd666', 50, 56, 0.11],
+      ['#ff85c0', '#fff0f6', 112, 48, 0.065],
+      ['#69c0ff', '#fffbe6', 124, 38, -0.055],
+      ['#b37feb', '#ffd666', 105, 62, 0.075],
     ];
 
     const basketMat = new THREE.MeshStandardMaterial({ color: '#8c5a3c', roughness: 0.85 });
@@ -690,23 +691,23 @@ export class DynamicWorld {
       c.group.position.y = c.baseY + Math.sin(elapsed * 0.6 + c.phase) * 0.9;
     }
 
-    // 5. 热气球与皇家小飞艇巡航
+    // 5. 热气球与皇家小飞艇净空巡航
     for (const b of this.balloons) {
       b.angle += b.speed * dt;
       b.group.position.set(
         Math.cos(b.angle) * b.orbitR,
         b.orbitY + Math.sin(elapsed * 0.9 + b.angle) * 2.2,
-        Math.sin(b.angle) * b.orbitR - 8
+        Math.sin(b.angle) * b.orbitR + 8
       );
       b.group.rotation.y = -b.angle;
     }
 
-    const shipAngle = elapsed * 0.13;
-    const shipR = 46;
-    const sx = Math.cos(shipAngle) * shipR;
-    const sz = Math.sin(shipAngle) * shipR - 18;
-    this.airship.position.set(sx, 43 + Math.sin(elapsed * 1.2) * 1.4, sz);
-    // 机头朝切线前进方向
+    const shipAngle = elapsed * 0.095;
+    const shipRx = 114;
+    const shipRz = 88;
+    const sx = Math.cos(shipAngle) * shipRx;
+    const sz = Math.sin(shipAngle) * shipRz + 4;
+    this.airship.position.set(sx, 52 + Math.sin(elapsed * 1.2) * 1.4, sz);
     this.airship.rotation.y = -shipAngle;
     this.airshipPropeller.rotation.z = elapsed * 16;
 
@@ -835,15 +836,15 @@ export class DynamicWorld {
     this.dragonLeftWing.rotation.z = wingFlap;
     this.dragonRightWing.rotation.z = -wingFlap;
 
-    // 13. 高空皇家三桅魔导浮空云船巡航
-    const galAngle = -elapsed * 0.085 + 0.8;
-    const galRx = 68;
-    const galRz = 48;
+    // 13. 高空皇家三桅魔导浮空云船外海净空巡航（远离凌霄冰宫与黄金钟塔！）
+    const galAngle = -elapsed * 0.075 + 0.8;
+    const galRx = 104;
+    const galRz = 78;
     const gx = Math.cos(galAngle) * galRx;
-    const gz = Math.sin(galAngle) * galRz - 42;
-    const gy = 68 + Math.sin(elapsed * 0.9) * 1.8;
+    const gz = Math.sin(galAngle) * galRz + 12;
+    const gy = 64 + Math.sin(elapsed * 0.9) * 1.8;
     const nextGx = Math.cos(galAngle - 0.02) * galRx;
-    const nextGz = Math.sin(galAngle - 0.02) * galRz - 42;
+    const nextGz = Math.sin(galAngle - 0.02) * galRz + 12;
     this.skyGalleon.position.set(gx, gy, gz);
     this.skyGalleon.lookAt(nextGx, gy, nextGz);
     for (const oar of this.galleonOars) {
@@ -851,11 +852,11 @@ export class DynamicWorld {
     }
   }
 
-  /** 采样九霄星霜圣龙的 3D 环绕航线（穿梭于凌霄冰宫与皇家圣城高空之间） */
+  /** 采样九霄星霜圣龙的 3D 护城环绕航线（围绕凌霄冰霜神殿外围 46 格净空盘旋，绝不撞塔！） */
   private sampleDragonPath(t: number): THREE.Vector3 {
-    const x = Math.sin(t) * 48 + Math.cos(t * 2) * 12;
-    const z = -64 + Math.cos(t) * 38;
-    const y = 92 + Math.sin(t * 2) * 12 + Math.cos(t * 3) * 3.5;
+    const x = Math.sin(t) * 48;
+    const z = -82 + Math.cos(t) * 42;
+    const y = 106 + Math.sin(t * 2) * 8.5;
     return new THREE.Vector3(x, y, z);
   }
 

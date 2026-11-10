@@ -479,8 +479,8 @@ export function buildFairytaleTown(world: VoxelWorld): TownDynamicHooks {
     [42, -4, 'golden', 1.05],
     [44, 30, 'emerald', 1.1],
     [26, 36, 'sakura_light', 1.0],
-    [-14, 42, 'sakura', 1.05],
-    [4, 43, 'golden', 0.95],
+    [-32, 38, 'sakura', 1.05],
+    [16, 41, 'golden', 0.95],
     [28, -42, 'emerald', 1.2],
     [36, -30, 'sakura', 1.1],
   ];

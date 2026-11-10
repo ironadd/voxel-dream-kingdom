@@ -287,8 +287,8 @@ export function buildDreamKingdom(world: VoxelWorld): KingdomMetadata {
     },
     clockwork: {
       label: '齿轮钟塔',
-      position: new THREE.Vector3(24, 56, 62),
-      target: new THREE.Vector3(58, 52, 38),
+      position: new THREE.Vector3(50, 56, 48),
+      target: new THREE.Vector3(78, 54, 22),
     },
     amusement: {
       label: '星梦乐园',

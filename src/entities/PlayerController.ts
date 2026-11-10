@@ -188,7 +188,8 @@ export class KingdomExplorer {
     this.wandStarTip.position.y = 0.33;
 
     this.wandViewmodel.add(stick, guard, wingL, wingR, this.wandStarTip);
-    this.wandViewmodel.position.set(0.36, -0.3, -0.58);
+    this.wandViewmodel.scale.setScalar(0.52);
+    this.wandViewmodel.position.set(0.38, -0.32, -0.62);
     this.wandViewmodel.rotation.set(0.22, -0.25, 0.12);
   }
 
@@ -522,10 +523,10 @@ export class KingdomExplorer {
   }
 
   private updateWandTransform(elapsed: number, walking: boolean): void {
-    const bobX = walking ? Math.cos(elapsed * 6) * 0.018 : Math.sin(elapsed * 1.8) * 0.006;
-    const bobY = walking ? Math.abs(Math.sin(elapsed * 12)) * 0.022 : Math.cos(elapsed * 1.8) * 0.008;
+    const bobX = walking ? Math.cos(elapsed * 6) * 0.014 : Math.sin(elapsed * 1.8) * 0.005;
+    const bobY = walking ? Math.abs(Math.sin(elapsed * 12)) * 0.018 : Math.cos(elapsed * 1.8) * 0.006;
     const swingAngle = Math.sin(this.swingAnim * Math.PI) * 0.75;
-    this.wandViewmodel.position.set(0.36 + bobX, -0.3 + bobY - swingAngle * 0.08, -0.58 - swingAngle * 0.12);
+    this.wandViewmodel.position.set(0.38 + bobX, -0.32 + bobY - swingAngle * 0.06, -0.62 - swingAngle * 0.1);
     this.wandViewmodel.rotation.set(0.22 - swingAngle, -0.25 + swingAngle * 0.4, 0.12);
   }
 }
