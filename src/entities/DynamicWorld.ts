@@ -25,14 +25,19 @@ interface FireworkParticle {
   maxAge: number;
 }
 
-interface VillagerNPC {
+export interface VillagerNPC {
   group: THREE.Group;
+  name: string;
+  dialogues: string[];
+  talkCursor: number;
   centerX: number;
   centerZ: number;
   radius: number;
   angle: number;
   speed: number;
   hopOffset: number;
+  greetTimer: number;
+  greetTarget: THREE.Vector3;
 }
 
 export class DynamicWorld {
@@ -79,7 +84,7 @@ export class DynamicWorld {
   private smokePuffs: SmokePuff[] = [];
   private lanterns: SkyLantern[] = [];
   private fireworks: FireworkParticle[] = [];
-  private villagers: VillagerNPC[] = [];
+  public readonly villagers: VillagerNPC[] = [];
 
   // 九霄苍穹史诗奇观：像素星霜圣龙 & 三桅魔导浮空云船
   private dragonSegments: THREE.Group[] = [];
@@ -441,17 +446,74 @@ export class DynamicWorld {
     }
   }
 
-  /** 9. 小镇广场与步道上散步跳跃的可爱像素小居民 */
+  /** 9. 小镇广场与步道上散步跳跃的可爱像素小居民（支持第一人称靠近交谈！） */
   private buildCuteVillagers(): void {
-    const spots: [number, number, number, string, string][] = [
-      [0, 15, 6.2, '#ff85c0', '#ffe58f'],   // 星泉广场散步的小公主
-      [0, 15, 7.0, '#4d88e5', '#ffd166'],   // 皇家巡逻小卫兵
-      [-12, 14, 4.0, '#73d13d', '#ffadd2'], // 西街花匠小精灵
-      [28, 18, 3.8, '#b37feb', '#bae7ff'],  // 风车坡上的小魔法师
-      [-33, 12, 4.2, '#69e0ff', '#ffffff'], // 樱花树下的果冻史莱姆
+    const spots: [number, number, number, string, string, string, string[]][] = [
+      [
+        0,
+        15,
+        6.2,
+        '#ff85c0',
+        '#ffe58f',
+        '👑 星泉小公主 · 艾莉亚',
+        [
+          '欢迎来到星冠云国！抬头看北边九霄上的凌霄冰霜神殿，入夜后极光超美哦！',
+          '去南岸可以实地坐上霓虹摩天轮和旋转木马，还能在月台搭乘云海银河小火车呢！',
+          '漫步时按 [F] 键挥动星辉魔杖能发射魔法星弹，按 [V] 键还能切换第一/第三人称哟～',
+        ],
+      ],
+      [
+        0,
+        15,
+        7.0,
+        '#4d88e5',
+        '#ffd166',
+        '🛡️ 皇家卫兵队长 · 雷欧',
+        [
+          '向您致敬，旅者！顺着北面的汉白玉宫灯大阶梯拾级而上，便是星冠皇家圣城！',
+          '广场东侧设有发光的「星界传送阵」，走过去按 [E] 就能瞬间飞抵九霄凌霄冰宫！',
+          '双击空格键可以开启仙灵御风飞行，整座天空群岛任您遨游！',
+        ],
+      ],
+      [
+        -12,
+        14,
+        4.0,
+        '#73d13d',
+        '#ffadd2',
+        '🌸 花语小精灵 · 露露',
+        [
+          '西边森林里的千年绯樱神木藏着花仙子的祝福，快去树下按 [E] 唤起漫天樱吹雪吧！',
+          '你听见天空巨鲸的歌声了吗？西南云海里还有一闪一闪的荧光水母群呢～',
+        ],
+      ],
+      [
+        28,
+        18,
+        3.8,
+        '#b37feb',
+        '#bae7ff',
+        '🔮 星象见习法师 · 梅林',
+        [
+          '看见东南天际那座黄金星晷钟塔了吗？三枚大齿轮可是按真实齿数比精确咬合转动的！',
+          '跨过彩虹星桥就能抵达紫晶星象台，在那里召唤流星雨会引起奥术大法阵共鸣哦！',
+        ],
+      ],
+      [
+        -33,
+        12,
+        4.2,
+        '#69e0ff',
+        '#ffffff',
+        '💧 樱花果冻史莱姆',
+        [
+          '噗噜噗噜～✨（开心地蹦了两下，往你身上撒了一把幸运星尘！）',
+          '咕叽咕叽～🌸（指了指头顶飘落的粉色樱花瓣，露出治愈的微笑！）',
+        ],
+      ],
     ];
 
-    spots.forEach(([cx, cz, radius, outfitHex, hatHex], idx) => {
+    spots.forEach(([cx, cz, radius, outfitHex, hatHex, name, dialogues], idx) => {
       const npc = new THREE.Group();
       const bodyMat = new THREE.MeshStandardMaterial({ color: outfitHex, roughness: 0.7 });
       const skinMat = new THREE.MeshStandardMaterial({ color: '#ffe0c8', roughness: 0.7 });
@@ -471,14 +533,63 @@ export class DynamicWorld {
 
       this.villagers.push({
         group: npc,
+        name,
+        dialogues,
+        talkCursor: 0,
         centerX: cx,
         centerZ: cz,
         radius,
         angle: idx * 1.4,
         speed: (idx % 2 === 0 ? 1 : -1) * (0.42 + idx * 0.05),
         hopOffset: idx * 0.9,
+        greetTimer: 0,
+        greetTarget: new THREE.Vector3(),
       });
     });
+  }
+
+  /** 让指定 NPC 停步转身面向玩家欢快跳跃，并返回下一句对话台词 */
+  public interactWithVillager(idx: number, playerPos: THREE.Vector3): { name: string; line: string } {
+    const v = this.villagers[idx];
+    v.greetTimer = 4.5;
+    v.greetTarget.copy(playerPos);
+    const line = v.dialogues[v.talkCursor % v.dialogues.length];
+    v.talkCursor++;
+
+    // 头顶迸发一小簇喜悦星花粒子
+    const burstPos = v.group.position.clone();
+    burstPos.y += 2.2;
+    this.spawnMiniSparkles(burstPos, '#ffe382', 14);
+    return { name: v.name, line };
+  }
+
+  /** 在指定位置迸发轻盈彩色像素星花/樱吹雪粒子 */
+  public spawnMiniSparkles(center: THREE.Vector3, mainHex: string, count = 24): void {
+    const mat1 = new THREE.MeshBasicMaterial({ color: mainHex });
+    const mat2 = new THREE.MeshBasicMaterial({ color: '#ffffff' });
+    for (let i = 0; i < count; i++) {
+      const m = new THREE.Mesh(this.sharedBox, i % 2 === 0 ? mat1 : mat2);
+      m.scale.setScalar(0.32);
+      m.position.copy(center).add(
+        new THREE.Vector3(
+          (Math.random() - 0.5) * 3.0,
+          (Math.random() - 0.5) * 2.0,
+          (Math.random() - 0.5) * 3.0
+        )
+      );
+      const vel = new THREE.Vector3(
+        (Math.random() - 0.5) * 6.5,
+        2.5 + Math.random() * 5.5,
+        (Math.random() - 0.5) * 6.5
+      );
+      this.group.add(m);
+      this.fireworks.push({
+        mesh: m,
+        vel,
+        age: 0,
+        maxAge: 1.2 + Math.random() * 0.5,
+      });
+    }
   }
 
   /** 玩家交互：在王国夜空绽放一簇绚丽像素方块烟花！ */
@@ -661,15 +772,25 @@ export class DynamicWorld {
       puff.mesh.scale.setScalar(s * (1 - t * 0.65));
     }
 
-    // 9. 小居民欢快蹦跳散步
+    // 9. 小居民欢快蹦跳散步（若正在与玩家交谈则停步转身面向玩家欢呼跳跃！）
     for (const v of this.villagers) {
-      v.angle += v.speed * dt;
-      const vx = v.centerX + Math.cos(v.angle) * v.radius;
-      const vz = v.centerZ + Math.sin(v.angle) * v.radius;
-      const groundY = this.world.getSurfaceY(vx, vz, 28, 10) + 1;
-      const hop = Math.abs(Math.sin(elapsed * 6.5 + v.hopOffset)) * 0.28;
-      v.group.position.set(vx, groundY + hop, vz);
-      v.group.rotation.y = -v.angle + (v.speed > 0 ? 0 : Math.PI);
+      if (v.greetTimer > 0) {
+        v.greetTimer -= dt;
+        const vx = v.centerX + Math.cos(v.angle) * v.radius;
+        const vz = v.centerZ + Math.sin(v.angle) * v.radius;
+        const groundY = this.world.getSurfaceY(vx, vz, 28, 10) + 1;
+        const happyHop = Math.abs(Math.sin(elapsed * 12)) * 0.45;
+        v.group.position.set(vx, groundY + happyHop, vz);
+        v.group.lookAt(v.greetTarget.x, groundY + happyHop, v.greetTarget.z);
+      } else {
+        v.angle += v.speed * dt;
+        const vx = v.centerX + Math.cos(v.angle) * v.radius;
+        const vz = v.centerZ + Math.sin(v.angle) * v.radius;
+        const groundY = this.world.getSurfaceY(vx, vz, 28, 10) + 1;
+        const hop = Math.abs(Math.sin(elapsed * 6.5 + v.hopOffset)) * 0.28;
+        v.group.position.set(vx, groundY + hop, vz);
+        v.group.rotation.set(0, -v.angle + (v.speed > 0 ? 0 : Math.PI), 0);
+      }
     }
 
     // 10. 祈愿天灯冉冉升空

@@ -383,9 +383,62 @@ body {
   z-index: 9;
   font-size: 22px;
   font-weight: 300;
-  color: rgba(255, 255, 255, 0.85);
-  text-shadow: 0 0 6px rgba(0, 0, 0, 0.7);
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 0 8px rgba(255, 160, 230, 0.85), 0 0 4px rgba(0, 0, 0, 0.8);
   pointer-events: none;
+}
+
+/* 第一人称准星靠近交互悬浮提示 */
+.interact-prompt {
+  position: fixed;
+  top: calc(50% + 28px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 15;
+  padding: 7px 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fffbe8;
+  border-color: rgba(255, 226, 148, 0.65);
+  box-shadow: 0 4px 20px rgba(255, 185, 120, 0.35);
+  pointer-events: auto;
+  cursor: pointer;
+  white-space: nowrap;
+  animation: promptPulse 1.6s ease-in-out infinite;
+}
+
+@keyframes promptPulse {
+  0%, 100% { transform: translateX(-50%) scale(1); }
+  50% { transform: translateX(-50%) scale(1.04); }
+}
+
+/* NPC 童话对话卡片 */
+.npc-dialog {
+  position: fixed;
+  bottom: 112px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 16;
+  min-width: 320px;
+  max-width: 520px;
+  padding: 12px 18px;
+  border-radius: 16px;
+  border-color: rgba(255, 210, 242, 0.55);
+  pointer-events: none;
+}
+
+.npc-speaker {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffe38f;
+  margin-bottom: 4px;
+}
+
+.npc-text {
+  font-size: 13px;
+  line-height: 1.55;
+  color: #fff6fc;
 }
 
 /* 恢复界面按钮 */

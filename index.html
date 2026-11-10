@@ -21,8 +21,15 @@
       </div>
     </div>
 
-    <!-- 漫步/建造准星 -->
+    <!-- 漫步/建造准星与第一人称场景交互提示 -->
     <div id="crosshair" class="hidden">+</div>
+    <div id="interact-prompt" class="glass-panel interact-prompt hidden"></div>
+
+    <!-- 童话 NPC 对话与奇观互动气泡 -->
+    <div id="npc-dialog" class="glass-panel npc-dialog hidden">
+      <div class="npc-speaker" id="npc-speaker"></div>
+      <div class="npc-text" id="npc-text"></div>
+    </div>
 
     <!-- 顶部 HUD -->
     <div id="hud-root">
@@ -85,7 +92,7 @@
           <button class="dock-btn" data-mode="cinematic">🎬 电影环游</button>
           <button class="dock-btn" data-mode="dragon">🐉 骑龙翱翔</button>
           <button class="dock-btn" data-mode="train">🚂 银河列车</button>
-          <button class="dock-btn" data-mode="walk">🚶 漫步王国</button>
+          <button class="dock-btn" data-mode="walk">🪄 第一人称漫步</button>
         </div>
         <div class="divider-v"></div>
         <div class="dock-group">

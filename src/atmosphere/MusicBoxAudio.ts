@@ -86,4 +86,50 @@ export class MusicBoxAudio {
     osc.start(startTime);
     osc.stop(startTime + duration + 0.05);
   }
+
+  private ensureContext(): AudioContext {
+    if (!this.ctx) {
+      this.ctx = new AudioContext();
+    }
+    if (this.ctx.state === 'suspended') {
+      this.ctx.resume();
+    }
+    return this.ctx;
+  }
+
+  /** 许愿、传送、乘坐奇观时的清脆水晶竖琴上行琶音 */
+  public playInteractChime(): void {
+    const ctx = this.ensureContext();
+    const now = ctx.currentTime;
+    [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => {
+      this.pluckNote(f, now + i * 0.065, 0.075, 1.1);
+    });
+  }
+
+  /** 放置或移除方块的轻快像素敲击音 */
+  public playBlockPop(isRemove = false): void {
+    const ctx = this.ensureContext();
+    const now = ctx.currentTime;
+    this.pluckNote(isRemove ? 330 : 587.33, now, 0.065, 0.22);
+    this.pluckNote(isRemove ? 246.94 : 880, now + 0.04, 0.045, 0.25);
+  }
+
+  /** 与小镇 NPC 对话时的灵动童话招呼音 */
+  public playNpcGreeting(seed = 0): void {
+    const ctx = this.ensureContext();
+    const now = ctx.currentTime;
+    const base = 480 + (seed % 5) * 65;
+    this.pluckNote(base, now, 0.06, 0.25);
+    this.pluckNote(base * 1.25, now + 0.07, 0.065, 0.32);
+    this.pluckNote(base * 1.5, now + 0.14, 0.055, 0.4);
+  }
+
+  /** 挥动第一人称星辉魔杖发射魔法星弹音效 */
+  public playWandCast(): void {
+    const ctx = this.ensureContext();
+    const now = ctx.currentTime;
+    this.pluckNote(659.25, now, 0.055, 0.35);
+    this.pluckNote(987.77, now + 0.045, 0.06, 0.55);
+    this.pluckNote(1318.5, now + 0.09, 0.045, 0.7);
+  }
 }

@@ -88,6 +88,22 @@ export class CelestialWonders {
     return { position: pos, lookAt: look };
   }
 
+  /** 获取 0 号摩天轮发光轿厢内部实时世界坐标（供第一人称实地乘坐观景！） */
+  public getFerrisCabinWorldPos(): THREE.Vector3 {
+    const wp = new THREE.Vector3();
+    this.ferrisGondolas[0].getWorldPosition(wp);
+    wp.y -= 1.15;
+    return wp;
+  }
+
+  /** 获取 0 号旋转木马实时世界坐标（供第一人称实地骑乘！） */
+  public getCarouselHorseWorldPos(): THREE.Vector3 {
+    const wp = new THREE.Vector3();
+    this.carouselHorses[0].group.getWorldPosition(wp);
+    wp.y += 1.25;
+    return wp;
+  }
+
   /** 1. 构建遨游深空云海的 13 节像素「苍穹星云巨鲸」 */
   private buildNebulaSkyWhale(): void {
     const whaleBackMat = new THREE.MeshStandardMaterial({

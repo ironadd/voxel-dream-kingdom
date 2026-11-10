@@ -13,6 +13,7 @@ import { SkyAndLighting, WeatherPresetKey } from './atmosphere/SkyAndLighting';
 import { DynamicWorld } from './entities/DynamicWorld';
 import { CelestialWonders } from './entities/CelestialWonders';
 import { CameraMode, KingdomExplorer } from './entities/PlayerController';
+import { WorldInteractions, ActiveInteraction } from './entities/WorldInteractions';
 import { MusicBoxAudio } from './atmosphere/MusicBoxAudio';
 
 async function bootstrap() {
@@ -49,10 +50,11 @@ async function bootstrap() {
   const camera = new THREE.PerspectiveCamera(
     48,
     window.innerWidth / window.innerHeight,
-    0.4,
+    0.25,
     980
   );
   camera.position.set(64, 46, 86);
+  scene.add(camera); // 使挂载于相机的第一人称 3D 星辉魔杖正常渲染
 
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
@@ -103,6 +105,12 @@ async function bootstrap() {
 
   const musicBox = new MusicBoxAudio();
 
+  let cameraMode: CameraMode = 'orbit';
+  const modeButtons = document.querySelectorAll<HTMLButtonElement>('[data-mode]');
+  const crosshairEl = document.getElementById('crosshair')!;
+  const interactPromptEl = document.getElementById('interact-prompt')!;
+  let currentInteraction: ActiveInteraction | null = null;
+
   const updateStatsLabel = () => {
     statsEl.textContent = `共 ${voxelWorld.blockCount.toLocaleString()} 枚像素方块 · 60 FPS`;
   };
@@ -119,7 +127,6 @@ async function bootstrap() {
   // =========================================================
   // 3. 相机平滑飞行过渡 & 模式切换
   // =========================================================
-  let cameraMode: CameraMode = 'orbit';
   let flyAnim: {
     fromPos: THREE.Vector3;
     toPos: THREE.Vector3;
@@ -141,19 +148,28 @@ async function bootstrap() {
     };
   };
 
-  const modeButtons = document.querySelectorAll<HTMLButtonElement>('[data-mode]');
-  const crosshairEl = document.getElementById('crosshair')!;
+  const updateWalkToast = () => {
+    const viewLabel = explorer.isFirstPerson ? '第一人称' : '第三人称';
+    toastEl.textContent = buildMode
+      ? `🧱 ${viewLabel}建造：准星对准方块 · 左键放置 · 右键拆除 · [B] 退出建造 · [ESC] 释放鼠标`
+      : `🪄 ${viewLabel}漫步：WASD 移动 · [E] 场景互动 · [F] 魔杖星弹 · [V] 切换一/三人称 · 双击空格飞行`;
+  };
 
   const switchCameraMode = (mode: CameraMode) => {
-    if (cameraMode === 'walk' && mode !== 'walk') {
-      explorer.exitWalkMode();
+    if (cameraMode !== mode) {
+      explorer.exitWalkMode(mode);
     }
     cameraMode = mode;
+    explorer.activeMode = mode;
     flyAnim = null;
 
     modeButtons.forEach((b) => b.classList.toggle('active', b.dataset.mode === mode));
     controls.enabled = mode === 'orbit';
     crosshairEl.classList.toggle('hidden', mode !== 'walk' && !buildMode);
+    if (mode !== 'walk') {
+      interactPromptEl.classList.add('hidden');
+      currentInteraction = null;
+    }
 
     if (mode === 'orbit') {
       toastEl.textContent = buildMode
@@ -162,15 +178,29 @@ async function bootstrap() {
     } else if (mode === 'cinematic') {
       toastEl.textContent = '🎬 正在进行无人机电影环游运镜 · 点击「自由俯瞰」可随时接管';
     } else if (mode === 'dragon') {
-      toastEl.textContent = '🐉 正在骑乘「九霄星霜圣龙」穿梭凌霄冰宫与极光苍穹！';
+      toastEl.textContent = '🐉 正在骑乘「九霄星霜圣龙」· 点击画面移动鼠标可 360° 自由转头环顾！';
     } else if (mode === 'train') {
-      toastEl.textContent = '🚂 正在搭乘「云海银河蒸汽列车」环游全岛星轨！';
+      toastEl.textContent = '🚂 正在搭乘「云海银河蒸汽列车」· 移动鼠标可自由欣赏窗外奇观！';
     } else if (mode === 'walk') {
       explorer.enterWalkMode();
-      toastEl.textContent =
-        '🚶 漫步王国：WASD 移动 · 空格跳跃（双击空格御风飞行！）· 按住鼠标转动视角';
+      updateWalkToast();
     }
   };
+
+  const interactions = new WorldInteractions(
+    voxelWorld,
+    dynamicWorld,
+    celestialWonders,
+    explorer,
+    sky,
+    musicBox,
+    switchCameraMode
+  );
+  scene.add(interactions.group);
+
+  interactPromptEl.addEventListener('click', () => {
+    currentInteraction?.execute();
+  });
 
   modeButtons.forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -178,7 +208,20 @@ async function bootstrap() {
     });
   });
 
-  // 景点速达按钮
+  // 漫步模式下点击景点按钮直接实地魔法传送到该景点平台！
+  const WALK_SPAWNS: Record<string, [number, number, number]> = {
+    panorama: [0.5, 13.05, 22.5],
+    frost: [0.5, 83.05, -62.5],
+    clockwork: [53.5, 37.05, 38.5],
+    amusement: [-12.5, 13.05, 37.5],
+    celestial: [0.5, 18.05, -6.5],
+    castle: [0.5, 23.05, -15.5],
+    plaza: [0.5, 13.05, 21.5],
+    windmill: [29.5, 16.05, 18.5],
+    rainbow: [54.5, 26.05, -11.5],
+    sakura: [-31.5, 14.05, 12.5],
+  };
+
   const landmarkButtons = document.querySelectorAll<HTMLButtonElement>('[data-landmark]');
   landmarkButtons.forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -186,7 +229,14 @@ async function bootstrap() {
       const lm = kingdomMeta.landmarks[key];
       if (!lm) return;
       landmarkButtons.forEach((b) => b.classList.toggle('active', b === btn));
-      flyToLandmark(lm.position, lm.target);
+      if (cameraMode === 'walk' && WALK_SPAWNS[key]) {
+        const [sx, sy, sz] = WALK_SPAWNS[key];
+        musicBox.playInteractChime();
+        explorer.teleportTo(sx, sy, sz, lm.target);
+        dynamicWorld.spawnMiniSparkles(new THREE.Vector3(sx, sy + 1, sz), '#7af5ff', 24);
+      } else {
+        flyToLandmark(lm.position, lm.target);
+      }
     });
   });
 
@@ -296,7 +346,7 @@ async function bootstrap() {
   highlightBox.visible = false;
   scene.add(highlightBox);
 
-  buildBtn.addEventListener('click', () => {
+  const toggleBuildMode = () => {
     buildMode = !buildMode;
     buildBtn.classList.toggle('active', buildMode);
     palettePanel.classList.toggle('hidden', !buildMode);
@@ -306,11 +356,27 @@ async function bootstrap() {
       toastEl.textContent = buildMode
         ? '🧱 建造模式：单击左键放置方块 · 单击右键移除方块 · 拖拽仍可旋转视角'
         : '🖱️ 左键旋转 · 右键平移 · 滚轮缩放 · 双击场景任意位置聚焦';
+    } else if (cameraMode === 'walk') {
+      updateWalkToast();
     }
-  });
+  };
+
+  buildBtn.addEventListener('click', toggleBuildMode);
 
   window.addEventListener('keydown', (e) => {
     if (e.code === 'KeyH') toggleHUD();
+    if (e.code === 'KeyB') toggleBuildMode();
+    if (cameraMode === 'walk') {
+      if (e.code === 'KeyV') {
+        setTimeout(updateWalkToast, 10);
+      }
+      if (e.code === 'KeyE' && currentInteraction) {
+        currentInteraction.execute();
+      }
+      if (e.code === 'KeyF') {
+        interactions.castMagicStarBolt();
+      }
+    }
     if (buildMode && e.key >= '1' && e.key <= '7') {
       const idx = Number(e.key) - 1;
       if (BUILD_PALETTE_BLOCKS[idx]) {
@@ -320,14 +386,19 @@ async function bootstrap() {
     }
   });
 
-  // 鼠标射线检测（双击平滑聚焦 + 建造模式悬停预览与放置拆除）
+  // 鼠标/准星射线检测（自动兼容上帝视角鼠标点选 & 第一人称屏幕准星瞄准！）
   const mouseNDC = new THREE.Vector2();
   const raycaster = new THREE.Raycaster();
   let pointerDownPos = { x: 0, y: 0 };
 
-  const castMouseVoxel = (clientX: number, clientY: number) => {
-    mouseNDC.x = (clientX / window.innerWidth) * 2 - 1;
-    mouseNDC.y = -(clientY / window.innerHeight) * 2 + 1;
+  const castTargetVoxel = (clientX?: number, clientY?: number) => {
+    if (cameraMode === 'walk' || document.pointerLockElement === renderer.domElement) {
+      mouseNDC.set(0, 0);
+      raycaster.setFromCamera(mouseNDC, camera);
+      return voxelWorld.raycast(raycaster.ray.origin, raycaster.ray.direction, 12, true);
+    }
+    mouseNDC.x = ((clientX ?? window.innerWidth / 2) / window.innerWidth) * 2 - 1;
+    mouseNDC.y = -((clientY ?? window.innerHeight / 2) / window.innerHeight) * 2 + 1;
     raycaster.setFromCamera(mouseNDC, camera);
     return voxelWorld.raycast(raycaster.ray.origin, raycaster.ray.direction, 160, true);
   };
@@ -337,8 +408,8 @@ async function bootstrap() {
   });
 
   renderer.domElement.addEventListener('pointermove', (e) => {
-    if (!buildMode) return;
-    const hit = castMouseVoxel(e.clientX, e.clientY);
+    if (!buildMode || cameraMode === 'walk') return;
+    const hit = castTargetVoxel(e.clientX, e.clientY);
     if (hit) {
       highlightBox.visible = true;
       highlightBox.position.set(hit.x + 0.5, hit.y + 0.5, hit.z + 0.5);
@@ -348,32 +419,43 @@ async function bootstrap() {
   });
 
   renderer.domElement.addEventListener('pointerup', (e) => {
-    if (!buildMode) return;
-    // 区分轻点与拖拽旋转相机（移动小于 5px 视为点击建造）
-    const moved = Math.hypot(e.clientX - pointerDownPos.x, e.clientY - pointerDownPos.y);
-    if (moved > 5) return;
+    const isLocked = document.pointerLockElement === renderer.domElement;
+    if (!isLocked) {
+      const moved = Math.hypot(e.clientX - pointerDownPos.x, e.clientY - pointerDownPos.y);
+      if (moved > 5) return;
+    }
 
-    const hit = castMouseVoxel(e.clientX, e.clientY);
-    if (!hit) return;
+    if (buildMode) {
+      const hit = castTargetVoxel(e.clientX, e.clientY);
+      if (!hit) return;
+      explorer.triggerWandSwing();
+      if (e.button === 0) {
+        const tx = hit.x + hit.nx;
+        const ty = hit.y + hit.ny;
+        const tz = hit.z + hit.nz;
+        voxelWorld.set(tx, ty, tz, selectedBlock);
+        voxelWorld.rebuildDirtyChunks();
+        musicBox.playBlockPop(false);
+        updateStatsLabel();
+      } else if (e.button === 2) {
+        voxelWorld.set(hit.x, hit.y, hit.z, BlockId.AIR);
+        voxelWorld.rebuildDirtyChunks();
+        musicBox.playBlockPop(true);
+        updateStatsLabel();
+      }
+      return;
+    }
 
-    if (e.button === 0) {
-      const tx = hit.x + hit.nx;
-      const ty = hit.y + hit.ny;
-      const tz = hit.z + hit.nz;
-      voxelWorld.set(tx, ty, tz, selectedBlock);
-      voxelWorld.rebuildDirtyChunks();
-      updateStatsLabel();
-    } else if (e.button === 2) {
-      voxelWorld.set(hit.x, hit.y, hit.z, BlockId.AIR);
-      voxelWorld.rebuildDirtyChunks();
-      updateStatsLabel();
+    // 第一人称未开建造时：右键快速触发当前准星场景互动（与 E 键等效！）
+    if (cameraMode === 'walk' && e.button === 2 && currentInteraction) {
+      currentInteraction.execute();
     }
   });
 
-  // 双击场景任意位置平滑推进聚焦，同时绽放一朵迎宾小烟花
+  // 双击场景任意位置平滑推进聚焦
   renderer.domElement.addEventListener('dblclick', (e) => {
     if (cameraMode !== 'orbit' || buildMode) return;
-    const hit = castMouseVoxel(e.clientX, e.clientY);
+    const hit = castTargetVoxel(e.clientX, e.clientY);
     if (!hit) return;
     const focusPoint = new THREE.Vector3(hit.x + 0.5, hit.y + 0.5, hit.z + 0.5);
     const offset = camera.position.clone().sub(controls.target);
@@ -421,14 +503,38 @@ async function bootstrap() {
       explorer.updateCinematic(dt);
     } else if (cameraMode === 'dragon') {
       const pose = dynamicWorld.getDragonCameraPose(elapsed);
-      camera.position.lerp(pose.position, Math.min(1, dt * 8));
-      camera.lookAt(pose.lookAt);
+      explorer.applyRidePose(pose.position, pose.lookAt, dt);
     } else if (cameraMode === 'train') {
       const pose = celestialWonders.getTrainCameraPose();
-      camera.position.lerp(pose.position, Math.min(1, dt * 10));
-      camera.lookAt(pose.lookAt);
+      explorer.applyRidePose(pose.position, pose.lookAt, dt);
     } else if (cameraMode === 'walk') {
-      explorer.updateWalk(dt, elapsed);
+      let ridePos: THREE.Vector3 | undefined;
+      if (explorer.rideAttachment === 'ferris') {
+        ridePos = celestialWonders.getFerrisCabinWorldPos();
+      } else if (explorer.rideAttachment === 'carousel') {
+        ridePos = celestialWonders.getCarouselHorseWorldPos();
+      }
+      explorer.updateWalk(dt, elapsed, ridePos);
+
+      // 第一人称实时建造选框追踪准星
+      if (buildMode) {
+        const hit = castTargetVoxel();
+        if (hit) {
+          highlightBox.visible = true;
+          highlightBox.position.set(hit.x + 0.5, hit.y + 0.5, hit.z + 0.5);
+        } else {
+          highlightBox.visible = false;
+        }
+      }
+
+      // 第一人称场景可交互目标实时检测
+      currentInteraction = interactions.detectAvailableInteraction();
+      if (currentInteraction) {
+        interactPromptEl.textContent = currentInteraction.prompt;
+        interactPromptEl.classList.remove('hidden');
+      } else {
+        interactPromptEl.classList.add('hidden');
+      }
     }
 
     // 水面轻微呼吸微光
@@ -439,6 +545,7 @@ async function bootstrap() {
     bloomPass.strength = sky.curBloomStrength;
     dynamicWorld.update(dt, elapsed);
     celestialWonders.update(dt, elapsed);
+    interactions.update(dt, elapsed);
 
     composer.render();
 
