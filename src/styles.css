@@ -1,0 +1,423 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #141026;
+  font-family: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', system-ui, -apple-system, sans-serif;
+  color: #fff8fc;
+}
+
+#canvas-container {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+}
+
+#canvas-container canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* 加载过渡画面 */
+#loading-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 42%, #35235c 0%, #17112b 70%, #0d091a 100%);
+  transition: opacity 0.7s ease, visibility 0.7s ease;
+}
+
+#loading-screen.fade-out {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.loader-crown {
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(135deg, #ffe38f, #ff9ed2, #8fd8ff);
+  box-shadow: 0 0 32px rgba(255, 178, 226, 0.65);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  animation: floatPulse 2.2s ease-in-out infinite;
+}
+
+.pixel-gem {
+  width: 22px;
+  height: 22px;
+  background: #fff9e6;
+  transform: rotate(45deg);
+  box-shadow: 0 0 12px #ffffff;
+}
+
+@keyframes floatPulse {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(6deg); }
+}
+
+.loader-title {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  background: linear-gradient(90deg, #fff3c4, #ffc7e8, #bfe6ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 10px;
+}
+
+.loader-subtitle {
+  font-size: 13px;
+  color: rgba(255, 240, 250, 0.75);
+  margin-bottom: 20px;
+  letter-spacing: 1px;
+}
+
+.loader-bar-track {
+  width: 260px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.loader-bar-fill {
+  width: 15%;
+  height: 100%;
+  background: linear-gradient(90deg, #ff9fd6, #ffe299, #88dcff);
+  border-radius: 999px;
+  transition: width 0.25s ease;
+}
+
+/* HUD 通用毛玻璃面板 */
+#hud-root {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+  transition: opacity 0.35s ease;
+}
+
+#hud-root.ui-hidden {
+  opacity: 0;
+  pointer-events: none !important;
+}
+
+#hud-root.ui-hidden * {
+  pointer-events: none !important;
+}
+
+.glass-panel {
+  pointer-events: auto;
+  background: rgba(24, 18, 44, 0.56);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  border: 1px solid rgba(255, 228, 248, 0.22);
+  box-shadow: 0 8px 32px rgba(10, 6, 24, 0.36), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  border-radius: 16px;
+}
+
+/* 左上角铭牌与景点导航 */
+.brand-panel {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  padding: 12px 14px;
+  width: 256px;
+}
+
+.brand-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.crown-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(255, 215, 130, 0.32), rgba(255, 154, 212, 0.32));
+  border: 1px solid rgba(255, 226, 176, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 19px;
+}
+
+.brand-title {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  color: #fff6fb;
+}
+
+.brand-meta {
+  font-size: 11px;
+  color: rgba(255, 232, 246, 0.72);
+  margin-top: 2px;
+}
+
+.landmark-label {
+  font-size: 11px;
+  color: rgba(255, 224, 242, 0.75);
+  margin-bottom: 6px;
+  letter-spacing: 0.5px;
+}
+
+.landmark-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.chip-btn {
+  appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.07);
+  color: rgba(255, 245, 252, 0.9);
+  font-size: 12px;
+  padding: 5px 8px;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.chip-btn:hover {
+  background: rgba(255, 192, 232, 0.22);
+  border-color: rgba(255, 210, 240, 0.45);
+  transform: translateY(-1px);
+}
+
+.chip-btn.active {
+  background: linear-gradient(135deg, rgba(255, 168, 218, 0.42), rgba(145, 196, 255, 0.38));
+  border-color: rgba(255, 226, 245, 0.7);
+  color: #ffffff;
+  font-weight: 600;
+}
+
+/* 顶部天象栏 */
+.time-panel {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 999px;
+}
+
+.time-btn,
+.icon-btn,
+.dock-btn {
+  appearance: none;
+  border: 1px solid transparent;
+  background: transparent;
+  color: rgba(255, 244, 252, 0.88);
+  font-size: 12.5px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.time-btn:hover,
+.icon-btn:hover,
+.dock-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.time-btn.active,
+.dock-btn.active,
+.toggle-btn.active {
+  background: linear-gradient(135deg, rgba(255, 174, 222, 0.48), rgba(138, 198, 255, 0.45));
+  border-color: rgba(255, 232, 248, 0.65);
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 2px 12px rgba(255, 166, 222, 0.28);
+}
+
+.divider-v {
+  width: 1px;
+  height: 18px;
+  background: rgba(255, 255, 255, 0.2);
+  margin: 0 2px;
+}
+
+/* 右上角工具栏 */
+.top-right-panel {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  border-radius: 999px;
+}
+
+/* 底部控制坞 */
+.bottom-dock {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 999px;
+}
+
+.dock-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.action-btn:active {
+  transform: scale(0.94);
+}
+
+/* 操作提示横幅 */
+.control-toast {
+  position: absolute;
+  bottom: 72px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 12px;
+  color: rgba(255, 245, 252, 0.85);
+  background: rgba(20, 14, 38, 0.45);
+  backdrop-filter: blur(8px);
+  padding: 5px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* 建造调色盘 */
+.build-palette {
+  position: absolute;
+  bottom: 108px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.palette-hint {
+  font-size: 11px;
+  color: rgba(255, 232, 246, 0.82);
+}
+
+.palette-slots {
+  display: flex;
+  gap: 8px;
+}
+
+.palette-slot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.palette-slot:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.palette-slot.active {
+  border-color: #ffe39f;
+  background: rgba(255, 214, 148, 0.28);
+  box-shadow: 0 0 12px rgba(255, 216, 148, 0.35);
+}
+
+.swatch-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+/* 屏幕准星 */
+#crosshair {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 9;
+  font-size: 22px;
+  font-weight: 300;
+  color: rgba(255, 255, 255, 0.85);
+  text-shadow: 0 0 6px rgba(0, 0, 0, 0.7);
+  pointer-events: none;
+}
+
+/* 恢复界面按钮 */
+#restore-ui-btn {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 20;
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 228, 248, 0.3);
+  background: rgba(24, 18, 44, 0.55);
+  backdrop-filter: blur(10px);
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.hidden {
+  display: none !important;
+}
+
+@media (max-width: 960px) {
+  .brand-panel {
+    width: 210px;
+    padding: 10px;
+  }
+  .time-panel {
+    top: auto;
+    bottom: 72px;
+  }
+  .control-toast {
+    display: none;
+  }
+}

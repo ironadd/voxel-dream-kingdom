@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>星冠云国 · Three.js 方块像素风梦幻王国</title>
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <div id="canvas-container"></div>
+
+    <!-- 唯美加载遮罩 -->
+    <div id="loading-screen">
+      <div class="loader-crown">
+        <div class="pixel-gem"></div>
+      </div>
+      <h1 class="loader-title">星冠云国 · 艾尔芙海姆</h1>
+      <p class="loader-subtitle" id="loading-status">正在编织像素纹理与浮空大陆...</p>
+      <div class="loader-bar-track">
+        <div class="loader-bar-fill" id="loading-bar"></div>
+      </div>
+    </div>
+
+    <!-- 漫步/建造准星 -->
+    <div id="crosshair" class="hidden">+</div>
+
+    <!-- 顶部 HUD -->
+    <div id="hud-root">
+      <!-- 左上角：王国铭牌与景点速达 -->
+      <div class="glass-panel brand-panel">
+        <div class="brand-header">
+          <span class="crown-badge">👑</span>
+          <div>
+            <div class="brand-title">星冠云国 · 梦幻体素界</div>
+            <div class="brand-meta" id="voxel-stats">构筑中...</div>
+          </div>
+        </div>
+        <div class="landmark-label">✨ 景点瞬移导览</div>
+        <div class="landmark-list">
+          <button class="chip-btn active" data-landmark="panorama">☁️ 云端全景</button>
+          <button class="chip-btn" data-landmark="castle">🏰 星冠圣城</button>
+          <button class="chip-btn" data-landmark="plaza">⛲ 星泉小镇</button>
+          <button class="chip-btn" data-landmark="windmill">🌾 花海风车</button>
+          <button class="chip-btn" data-landmark="rainbow">🌈 彩虹星岛</button>
+          <button class="chip-btn" data-landmark="sakura">🌸 樱花神木</button>
+        </div>
+      </div>
+
+      <!-- 顶部居中：四时梦幻天象 -->
+      <div class="glass-panel time-panel">
+        <button class="time-btn active" data-preset="dawn">🌸 晨曦樱华</button>
+        <button class="time-btn" data-preset="day">☀️ 晴空童话</button>
+        <button class="time-btn" data-preset="sunset">🌇 黄昏金辉</button>
+        <button class="time-btn" data-preset="night">🌌 星夜幻境</button>
+        <div class="divider-v"></div>
+        <button class="time-btn toggle-btn" id="btn-auto-cycle" title="自动流转四时昼夜">⏱️ 流转</button>
+      </div>
+
+      <!-- 右上角：工具小按钮 -->
+      <div class="glass-panel top-right-panel">
+        <button class="icon-btn" id="btn-music" title="梦幻八音盒旋律">🎵 音乐: 关</button>
+        <button class="icon-btn" id="btn-screenshot" title="导出无UI高清壁纸">📸 截图</button>
+        <button class="icon-btn" id="btn-hide-ui" title="按 H 键切换界面显示">👁️ 沉浸 (H)</button>
+      </div>
+
+      <!-- 建造模式方块调色盘（开启建造时显示） -->
+      <div class="glass-panel build-palette hidden" id="build-palette">
+        <div class="palette-hint">左键：放置方块 ｜ 右键：移除方块 ｜ 数字键 1-7 切换</div>
+        <div class="palette-slots" id="palette-slots"></div>
+      </div>
+
+      <!-- 操作提示横幅 -->
+      <div class="control-toast" id="control-toast">
+        🖱️ 左键旋转 · 右键平移 · 滚轮缩放 · 双击场景任意位置聚焦
+      </div>
+
+      <!-- 底部居中：主控制坞 -->
+      <div class="glass-panel bottom-dock">
+        <div class="dock-group">
+          <button class="dock-btn active" data-mode="orbit">🦅 自由俯瞰</button>
+          <button class="dock-btn" data-mode="cinematic">🎬 电影环游</button>
+          <button class="dock-btn" data-mode="walk">🚶 漫步王国</button>
+        </div>
+        <div class="divider-v"></div>
+        <div class="dock-group">
+          <button class="dock-btn action-btn" id="btn-firework">🎆 绽放烟花</button>
+          <button class="dock-btn action-btn" id="btn-lantern">🏮 放飞天灯</button>
+          <button class="dock-btn toggle-btn" id="btn-build-mode">🧱 自由建造</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 沉浸模式恢复提示 -->
+    <button id="restore-ui-btn" class="hidden">👁️ 显示界面 (H)</button>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
