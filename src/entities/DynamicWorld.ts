@@ -738,6 +738,18 @@ export class DynamicWorld {
     return new THREE.Vector3(x, y, z);
   }
 
+  /** 获取「骑乘九霄星霜圣龙」过肩背脊视角位姿 */
+  public getDragonCameraPose(elapsed: number): {
+    position: THREE.Vector3;
+    lookAt: THREE.Vector3;
+  } {
+    const t = elapsed * 0.42 - 0.16;
+    const pos = this.sampleDragonPath(t);
+    const look = this.sampleDragonPath(t + 0.35);
+    pos.y += 4.2;
+    return { position: pos, lookAt: look };
+  }
+
   /** 构建翱翔九霄的 16 节像素「星霜圣龙」 */
   private buildCelestialFrostDragon(): void {
     const scaleMat = new THREE.MeshStandardMaterial({

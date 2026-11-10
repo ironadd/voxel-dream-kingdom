@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { BlockId } from '../voxel/BlockTypes';
 import { VoxelWorld } from '../voxel/VoxelMesher';
 
-export type CameraMode = 'orbit' | 'cinematic' | 'walk';
+export type CameraMode = 'orbit' | 'cinematic' | 'walk' | 'dragon' | 'train';
 
 export class KingdomExplorer {
   public readonly avatar = new THREE.Group();

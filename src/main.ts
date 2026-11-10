@@ -11,6 +11,7 @@ import { VoxelWorld } from './voxel/VoxelMesher';
 import { buildDreamKingdom } from './world/KingdomBuilder';
 import { SkyAndLighting, WeatherPresetKey } from './atmosphere/SkyAndLighting';
 import { DynamicWorld } from './entities/DynamicWorld';
+import { CelestialWonders } from './entities/CelestialWonders';
 import { CameraMode, KingdomExplorer } from './entities/PlayerController';
 import { MusicBoxAudio } from './atmosphere/MusicBoxAudio';
 
@@ -89,10 +90,13 @@ async function bootstrap() {
   await setProgress(84, '正在烘焙逐顶点环境光遮蔽 (AO) 与体素网格...');
   voxelWorld.rebuildDirtyChunks();
 
-  await setProgress(96, '正在唤醒云海、热气球、飞瀑与樱花精灵...');
+  await setProgress(96, '正在唤醒星云巨鲸、冰火神兽、银河列车与奥术星阵...');
   const sky = new SkyAndLighting(scene, voxelWorld);
   const dynamicWorld = new DynamicWorld(voxelWorld, kingdomMeta);
   scene.add(dynamicWorld.group);
+
+  const celestialWonders = new CelestialWonders(kingdomMeta.wonders);
+  scene.add(celestialWonders.group);
 
   const explorer = new KingdomExplorer(voxelWorld, camera, renderer.domElement);
   scene.add(explorer.avatar);
@@ -157,6 +161,10 @@ async function bootstrap() {
         : '🖱️ 左键旋转 · 右键平移 · 滚轮缩放 · 双击场景任意位置聚焦';
     } else if (mode === 'cinematic') {
       toastEl.textContent = '🎬 正在进行无人机电影环游运镜 · 点击「自由俯瞰」可随时接管';
+    } else if (mode === 'dragon') {
+      toastEl.textContent = '🐉 正在骑乘「九霄星霜圣龙」穿梭凌霄冰宫与极光苍穹！';
+    } else if (mode === 'train') {
+      toastEl.textContent = '🚂 正在搭乘「云海银河蒸汽列车」环游全岛星轨！';
     } else if (mode === 'walk') {
       explorer.enterWalkMode();
       toastEl.textContent =
@@ -214,8 +222,13 @@ async function bootstrap() {
   });
 
   // =========================================================
-  // 5. 趣味交互：烟花、天灯、音乐、截图、沉浸隐藏 UI、自由建造！
+  // 5. 趣味交互：星雨、烟花、天灯、音乐、截图、沉浸隐藏 UI、自由建造！
   // =========================================================
+  document.getElementById('btn-meteor')!.addEventListener('click', () => {
+    sky.summonMeteorShower();
+    celestialWonders.triggerArcaneResonance();
+  });
+
   document.getElementById('btn-firework')!.addEventListener('click', () => {
     dynamicWorld.launchFirework();
     setTimeout(() => dynamicWorld.launchFirework(), 240);
@@ -406,6 +419,14 @@ async function bootstrap() {
       controls.update();
     } else if (cameraMode === 'cinematic') {
       explorer.updateCinematic(dt);
+    } else if (cameraMode === 'dragon') {
+      const pose = dynamicWorld.getDragonCameraPose(elapsed);
+      camera.position.lerp(pose.position, Math.min(1, dt * 8));
+      camera.lookAt(pose.lookAt);
+    } else if (cameraMode === 'train') {
+      const pose = celestialWonders.getTrainCameraPose();
+      camera.position.lerp(pose.position, Math.min(1, dt * 10));
+      camera.lookAt(pose.lookAt);
     } else if (cameraMode === 'walk') {
       explorer.updateWalk(dt, elapsed);
     }
@@ -417,6 +438,7 @@ async function bootstrap() {
     sky.update(dt, elapsed);
     bloomPass.strength = sky.curBloomStrength;
     dynamicWorld.update(dt, elapsed);
+    celestialWonders.update(dt, elapsed);
 
     composer.render();
 

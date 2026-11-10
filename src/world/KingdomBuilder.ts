@@ -5,6 +5,7 @@ import { buildRoyalCastle, FlagAnchor } from './CastleArchitect';
 import { buildFairytaleTown, TownDynamicHooks } from './TownArchitect';
 import { buildFloatingIslandsAndWonders, FloatingIslandHooks } from './FloatingIslands';
 import { buildCelestialFrostPalace, FrostPalaceHooks } from './FrostPalaceArchitect';
+import { buildWonderIslandsAndPark, WonderHooks } from './WonderIslands';
 
 export interface LandmarkCamera {
   position: THREE.Vector3;
@@ -17,6 +18,7 @@ export interface KingdomMetadata {
   town: TownDynamicHooks;
   islands: FloatingIslandHooks;
   frost: FrostPalaceHooks;
+  wonders: WonderHooks;
   landmarks: Record<string, LandmarkCamera>;
 }
 
@@ -267,9 +269,10 @@ export function buildDreamKingdom(world: VoxelWorld): KingdomMetadata {
   const town = buildFairytaleTown(world);
   const islands = buildFloatingIslandsAndWonders(world, waterfallEmitters);
   const frost = buildCelestialFrostPalace(world);
+  const wonders = buildWonderIslandsAndPark(world);
 
   // =========================================================
-  // 5. 精心校调的七大明信片级导览机位
+  // 5. 精心校调的十大明信片级导览机位
   // =========================================================
   const landmarks: Record<string, LandmarkCamera> = {
     panorama: {
@@ -282,10 +285,20 @@ export function buildDreamKingdom(world: VoxelWorld): KingdomMetadata {
       position: new THREE.Vector3(34, 108, -32),
       target: new THREE.Vector3(0, 98, -82),
     },
+    clockwork: {
+      label: '齿轮钟塔',
+      position: new THREE.Vector3(24, 56, 62),
+      target: new THREE.Vector3(58, 52, 38),
+    },
+    amusement: {
+      label: '星梦乐园',
+      position: new THREE.Vector3(-12, 24, 68),
+      target: new THREE.Vector3(-12, 22, 40),
+    },
     celestial: {
-      label: '九霄星龙',
+      label: '冰火苍穹',
       position: new THREE.Vector3(18, 22, 36),
-      target: new THREE.Vector3(0, 82, -66),
+      target: new THREE.Vector3(8, 78, -58),
     },
     castle: {
       label: '星冠圣城',
@@ -314,5 +327,5 @@ export function buildDreamKingdom(world: VoxelWorld): KingdomMetadata {
     },
   };
 
-  return { flags, town, islands, frost, landmarks };
+  return { flags, town, islands, frost, wonders, landmarks };
 }

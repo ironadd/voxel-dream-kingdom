@@ -491,24 +491,25 @@ export class SkyAndLighting {
     this.scene.add(this.companionPlanet);
   }
 
-  /** 构建高空像素流星系统 */
+  /** 构建高空像素流星系统（常驻 3 颗 + 预留 22 颗供「召唤星雨」大招爆发！） */
   private buildShootingMeteors(): void {
     const headMat = new THREE.MeshBasicMaterial({ color: '#ffffff', fog: false });
-    const tailMat = new THREE.MeshBasicMaterial({
-      color: '#7af5ff',
-      transparent: true,
-      opacity: 0.65,
-      fog: false,
-    });
+    const tailPalette = ['#7af5ff', '#ff85d0', '#ffe066', '#b888ff', '#72ffbe'];
 
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 25; i++) {
+      const tailMat = new THREE.MeshBasicMaterial({
+        color: tailPalette[i % tailPalette.length],
+        transparent: true,
+        opacity: 0.78,
+        fog: false,
+      });
       const g = new THREE.Group();
-      const head = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.8, 1.8), headMat);
+      const head = new THREE.Mesh(new THREE.BoxGeometry(2.0, 2.0, 2.0), headMat);
       g.add(head);
       for (let t = 1; t <= 5; t++) {
-        const sc = 1.5 * (1 - t / 6.5);
-        const seg = new THREE.Mesh(new THREE.BoxGeometry(sc, sc, sc * 2.4), tailMat);
-        seg.position.z = -t * 3.2;
+        const sc = 1.6 * (1 - t / 6.5);
+        const seg = new THREE.Mesh(new THREE.BoxGeometry(sc, sc, sc * 2.5), tailMat);
+        seg.position.z = -t * 3.4;
         g.add(seg);
       }
       g.visible = false;
@@ -518,10 +519,33 @@ export class SkyAndLighting {
         vel: new THREE.Vector3(),
         age: 0,
         maxAge: 1.8,
-        cooldown: 1.5 + i * 3.2,
+        cooldown: i < 3 ? 1.5 + i * 3.2 : Infinity,
         active: false,
       });
     }
+  }
+
+  /** 玩家大招：召唤漫天璀璨像素星陨流星雨并激发极光高潮！ */
+  public summonMeteorShower(): void {
+    this.auroraUniforms.uOpacity.value = 1.15;
+    const dirSign = Math.random() > 0.5 ? 1 : -1;
+    this.meteors.forEach((m, idx) => {
+      m.active = true;
+      m.age = -Math.random() * 0.65; // 错峰划落更有层次
+      m.maxAge = 1.7 + Math.random() * 0.9;
+      m.group.position.set(
+        -210 + Math.random() * 420,
+        135 + Math.random() * 85,
+        -210 + Math.random() * 210
+      );
+      m.vel.set(
+        dirSign * (75 + Math.random() * 40),
+        -32 - Math.random() * 16,
+        24 + Math.random() * 24
+      );
+      m.group.lookAt(m.group.position.clone().add(m.vel));
+      m.group.visible = idx >= 0;
+    });
   }
 
   public setPreset(key: WeatherPresetKey): void {
@@ -584,7 +608,8 @@ export class SkyAndLighting {
     this.companionPlanet.rotation.y = elapsed * 0.05;
 
     // 像素流星划过天际
-    for (const m of this.meteors) {
+    for (let mi = 0; mi < this.meteors.length; mi++) {
+      const m = this.meteors[mi];
       if (!m.active) {
         m.cooldown -= dt;
         if (m.cooldown <= 0) {
@@ -605,13 +630,18 @@ export class SkyAndLighting {
         }
       } else {
         m.age += dt;
+        if (m.age < 0) {
+          m.group.visible = false;
+          continue;
+        }
+        m.group.visible = true;
         m.group.position.addScaledVector(m.vel, dt);
         const s = Math.sin((m.age / m.maxAge) * Math.PI);
         m.group.scale.setScalar(Math.max(0.05, s));
         if (m.age >= m.maxAge) {
           m.active = false;
           m.group.visible = false;
-          m.cooldown = 2.8 + Math.random() * 5.0;
+          m.cooldown = mi < 3 ? 2.6 + Math.random() * 4.5 : Infinity;
         }
       }
     }
