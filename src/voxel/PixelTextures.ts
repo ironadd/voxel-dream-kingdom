@@ -470,6 +470,53 @@ export function createPixelTextureAtlas(): THREE.CanvasTexture {
     });
   }
 
+  // 51~56: 九霄凌霄冰霜宫殿像素纹理
+  drawTile(TileIndex.FROST_BRICK, (c, rng) => {
+    paintBricks(c, rng, '#d8f3ff', '#8ecae6', 4);
+    // 晶莹斜向冰霜高光纹
+    for (let i = 0; i < 12; i++) {
+      px(c, i + 2, (i * 3) % 15, '#ffffff', 2, 1);
+    }
+  });
+
+  drawTile(TileIndex.DARK_ABYSS_ICE, (c, rng) => {
+    paintBricks(c, rng, '#283d70', '#19274d', 4);
+    px(c, 0, 0, '#5ec8f8', 16, 1);
+    px(c, 6, 6, '#6be2ff', 4, 4);
+  });
+
+  drawTile(TileIndex.FROST_PILLAR_SIDE, (c, rng) => {
+    fillNoise(c, rng, '#dcf5ff', 0.03);
+    for (let x = 2; x < 16; x += 4) {
+      px(c, x, 0, '#8ecae6', 1, 16);
+      px(c, x + 1, 0, '#ffffff', 1, 16);
+    }
+  });
+
+  drawTile(TileIndex.FROST_PILLAR_TOP, (c, rng) => {
+    fillNoise(c, rng, '#dcf5ff', 0.02);
+    px(c, 1, 1, '#7cc6eb', 14, 14);
+    px(c, 4, 4, '#ffffff', 8, 8);
+  });
+
+  drawTile(TileIndex.FROST_RUNE_GLOW, (c) => {
+    px(c, 0, 0, '#2bb8e6', 16, 16);
+    px(c, 2, 2, '#6ef2ff', 12, 12);
+    px(c, 4, 4, '#c7fcff', 8, 8);
+    px(c, 6, 1, '#ffffff', 4, 14);
+    px(c, 1, 6, '#ffffff', 14, 4);
+  });
+
+  drawTile(TileIndex.GLACIER_ICE, (c, rng) => {
+    fillNoise(c, rng, '#62cdfa', 0.05);
+    // 冰晶斜向折射亮带
+    for (let i = 0; i < 14; i++) {
+      px(c, i, 14 - i, '#dffaff', 2, 2);
+    }
+    px(c, 0, 0, '#b8f2ff', 16, 1);
+    px(c, 0, 0, '#b8f2ff', 1, 16);
+  });
+
   const texture = new THREE.CanvasTexture(canvas);
   texture.magFilter = THREE.NearestFilter;
   texture.minFilter = THREE.NearestFilter;

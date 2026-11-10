@@ -4,6 +4,7 @@ import { VoxelWorld } from '../voxel/VoxelMesher';
 import { buildRoyalCastle, FlagAnchor } from './CastleArchitect';
 import { buildFairytaleTown, TownDynamicHooks } from './TownArchitect';
 import { buildFloatingIslandsAndWonders, FloatingIslandHooks } from './FloatingIslands';
+import { buildCelestialFrostPalace, FrostPalaceHooks } from './FrostPalaceArchitect';
 
 export interface LandmarkCamera {
   position: THREE.Vector3;
@@ -15,6 +16,7 @@ export interface KingdomMetadata {
   flags: FlagAnchor[];
   town: TownDynamicHooks;
   islands: FloatingIslandHooks;
+  frost: FrostPalaceHooks;
   landmarks: Record<string, LandmarkCamera>;
 }
 
@@ -258,21 +260,32 @@ export function buildDreamKingdom(world: VoxelWorld): KingdomMetadata {
   paintCobbleRoad(world, 0, 23, -4, 36, 1.6);       // 广场向南延伸至南岸观景台
 
   // =========================================================
-  // 4. 建造皇家星冠圣城、童话风车小镇、浮空群岛与彩虹桥
+  // 4. 建造皇家星冠圣城、童话风车小镇、浮空群岛与九霄凌霄冰霜神殿
   // =========================================================
   const flags: FlagAnchor[] = [];
   buildRoyalCastle(world, flags);
   const town = buildFairytaleTown(world);
   const islands = buildFloatingIslandsAndWonders(world, waterfallEmitters);
+  const frost = buildCelestialFrostPalace(world);
 
   // =========================================================
-  // 5. 精心校调的六大明信片级导览机位
+  // 5. 精心校调的七大明信片级导览机位
   // =========================================================
   const landmarks: Record<string, LandmarkCamera> = {
     panorama: {
       label: '云端全景',
-      position: new THREE.Vector3(58, 52, 78),
-      target: new THREE.Vector3(0, 22, -6),
+      position: new THREE.Vector3(64, 46, 86),
+      target: new THREE.Vector3(0, 38, -24),
+    },
+    frost: {
+      label: '凌霄冰宫',
+      position: new THREE.Vector3(34, 108, -32),
+      target: new THREE.Vector3(0, 98, -82),
+    },
+    celestial: {
+      label: '九霄星龙',
+      position: new THREE.Vector3(18, 22, 36),
+      target: new THREE.Vector3(0, 82, -66),
     },
     castle: {
       label: '星冠圣城',
@@ -301,5 +314,5 @@ export function buildDreamKingdom(world: VoxelWorld): KingdomMetadata {
     },
   };
 
-  return { flags, town, islands, landmarks };
+  return { flags, town, islands, frost, landmarks };
 }

@@ -33,14 +33,14 @@ export class KingdomExplorer {
 
     this.tourCurve = new THREE.CatmullRomCurve3(
       [
-        new THREE.Vector3(54, 48, 72),
-        new THREE.Vector3(62, 34, 18),
-        new THREE.Vector3(48, 35, -28),
-        new THREE.Vector3(0, 52, -72),
-        new THREE.Vector3(-48, 38, -22),
+        new THREE.Vector3(62, 46, 84),
+        new THREE.Vector3(62, 36, 18),
+        new THREE.Vector3(46, 56, -24),
+        new THREE.Vector3(34, 108, -34),
+        new THREE.Vector3(-34, 106, -42),
+        new THREE.Vector3(-48, 44, -18),
         new THREE.Vector3(-52, 28, 28),
-        new THREE.Vector3(-12, 24, 54),
-        new THREE.Vector3(24, 26, 42),
+        new THREE.Vector3(16, 22, 46),
       ],
       true,
       'catmullrom',
@@ -49,14 +49,14 @@ export class KingdomExplorer {
 
     this.lookCurve = new THREE.CatmullRomCurve3(
       [
-        new THREE.Vector3(0, 24, -10),
-        new THREE.Vector3(45, 24, -6),
-        new THREE.Vector3(8, 34, -34),
-        new THREE.Vector3(0, 36, -36),
-        new THREE.Vector3(-24, 24, -10),
+        new THREE.Vector3(0, 38, -24),
+        new THREE.Vector3(45, 28, -10),
+        new THREE.Vector3(4, 68, -62),
+        new THREE.Vector3(0, 98, -82),
+        new THREE.Vector3(0, 94, -80),
+        new THREE.Vector3(-24, 28, -14),
         new THREE.Vector3(-34, 20, 12),
-        new THREE.Vector3(0, 18, 12),
-        new THREE.Vector3(18, 20, 14),
+        new THREE.Vector3(0, 56, -36),
       ],
       true,
       'catmullrom',

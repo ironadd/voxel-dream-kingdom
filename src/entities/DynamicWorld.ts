@@ -81,6 +81,13 @@ export class DynamicWorld {
   private fireworks: FireworkParticle[] = [];
   private villagers: VillagerNPC[] = [];
 
+  // 九霄苍穹史诗奇观：像素星霜圣龙 & 三桅魔导浮空云船
+  private dragonSegments: THREE.Group[] = [];
+  private dragonLeftWing!: THREE.Group;
+  private dragonRightWing!: THREE.Group;
+  private skyGalleon!: THREE.Group;
+  private galleonOars: { pivot: THREE.Group; side: number; phase: number }[] = [];
+
   private sharedBox = new THREE.BoxGeometry(1, 1, 1);
   private dummy = new THREE.Object3D();
 
@@ -90,6 +97,8 @@ export class DynamicWorld {
     this.buildCastleFlags();
     this.buildVoxelCloudSea();
     this.buildHotAirBalloonsAndAirship();
+    this.buildCelestialFrostDragon();
+    this.buildGrandSkyGalleon();
     this.buildSakuraAndFireflyParticles();
     this.buildWaterSplashes();
     this.buildSmokeSystem();
@@ -204,14 +213,23 @@ export class DynamicWorld {
       opacity: 0.9,
     });
 
-    for (let i = 0; i < 26; i++) {
+    for (let i = 0; i < 38; i++) {
       const cg = new THREE.Group();
-      const angle = (i / 26) * Math.PI * 2 + (i % 3) * 0.2;
-      const dist = i < 10 ? 45 + (i % 4) * 14 : 78 + (i % 5) * 18;
-      const baseY = i < 10 ? -24 - (i % 3) * 5 : 8 + (i % 6) * 9;
+      const angle = (i / 38) * Math.PI * 2 + (i % 3) * 0.2;
+      const isHighCelestial = i >= 26;
+      const dist = isHighCelestial
+        ? 38 + (i % 5) * 16
+        : i < 10
+        ? 45 + (i % 4) * 14
+        : 78 + (i % 5) * 18;
+      const baseY = isHighCelestial
+        ? 66 + (i % 4) * 9
+        : i < 10
+        ? -24 - (i % 3) * 5
+        : 8 + (i % 6) * 9;
 
-      const w = 8 + (i % 4) * 3;
-      const d = 5 + (i % 3) * 2;
+      const w = 8 + (i % 4) * 3.5;
+      const d = 5 + (i % 3) * 2.2;
       const mainBlock = new THREE.Mesh(new THREE.BoxGeometry(w, 2.4, d), cloudMat);
       const topPuff = new THREE.Mesh(
         new THREE.BoxGeometry(w * 0.62, 2.0, d * 0.68),
@@ -225,7 +243,11 @@ export class DynamicWorld {
       sidePuff.position.set(-w * 0.35, -0.2, d * 0.25);
 
       cg.add(mainBlock, topPuff, sidePuff);
-      cg.position.set(Math.cos(angle) * dist, baseY, Math.sin(angle) * dist);
+      cg.position.set(
+        Math.cos(angle) * dist,
+        baseY,
+        Math.sin(angle) * dist - (isHighCelestial ? 68 : 0)
+      );
       this.group.add(cg);
       this.clouds.push({
         group: cg,
@@ -678,5 +700,245 @@ export class DynamicWorld {
       const remain = 1 - fw.age / fw.maxAge;
       fw.mesh.scale.setScalar(0.6 * remain);
     }
+
+    // 12. 九霄像素星霜圣龙盘旋游动与扇翼动画
+    for (let i = 0; i < this.dragonSegments.length; i++) {
+      const seg = this.dragonSegments[i];
+      const t = elapsed * 0.42 - i * 0.11;
+      const pos = this.sampleDragonPath(t);
+      const ahead = this.sampleDragonPath(t + 0.06);
+      seg.position.copy(pos);
+      seg.lookAt(ahead);
+    }
+    const wingFlap = Math.sin(elapsed * 3.8) * 0.52;
+    this.dragonLeftWing.rotation.z = wingFlap;
+    this.dragonRightWing.rotation.z = -wingFlap;
+
+    // 13. 高空皇家三桅魔导浮空云船巡航
+    const galAngle = -elapsed * 0.085 + 0.8;
+    const galRx = 68;
+    const galRz = 48;
+    const gx = Math.cos(galAngle) * galRx;
+    const gz = Math.sin(galAngle) * galRz - 42;
+    const gy = 68 + Math.sin(elapsed * 0.9) * 1.8;
+    const nextGx = Math.cos(galAngle - 0.02) * galRx;
+    const nextGz = Math.sin(galAngle - 0.02) * galRz - 42;
+    this.skyGalleon.position.set(gx, gy, gz);
+    this.skyGalleon.lookAt(nextGx, gy, nextGz);
+    for (const oar of this.galleonOars) {
+      oar.pivot.rotation.z = oar.side * (Math.sin(elapsed * 3.2 + oar.phase) * 0.35 - 0.12);
+    }
+  }
+
+  /** 采样九霄星霜圣龙的 3D 环绕航线（穿梭于凌霄冰宫与皇家圣城高空之间） */
+  private sampleDragonPath(t: number): THREE.Vector3 {
+    const x = Math.sin(t) * 48 + Math.cos(t * 2) * 12;
+    const z = -64 + Math.cos(t) * 38;
+    const y = 92 + Math.sin(t * 2) * 12 + Math.cos(t * 3) * 3.5;
+    return new THREE.Vector3(x, y, z);
+  }
+
+  /** 构建翱翔九霄的 16 节像素「星霜圣龙」 */
+  private buildCelestialFrostDragon(): void {
+    const scaleMat = new THREE.MeshStandardMaterial({
+      color: '#bfefff',
+      emissive: '#3ac8ff',
+      emissiveIntensity: 0.38,
+      roughness: 0.35,
+    });
+    const bellyMat = new THREE.MeshStandardMaterial({
+      color: '#f2fcff',
+      roughness: 0.5,
+    });
+    const hornGoldMat = new THREE.MeshStandardMaterial({
+      color: '#ffe082',
+      emissive: '#ffbe42',
+      emissiveIntensity: 0.55,
+      roughness: 0.3,
+    });
+    const glowIceMat = new THREE.MeshBasicMaterial({
+      color: '#7af7ff',
+    });
+    const wingMembraneMat = new THREE.MeshStandardMaterial({
+      color: '#6ce5ff',
+      emissive: '#4cd8ff',
+      emissiveIntensity: 0.72,
+      transparent: true,
+      opacity: 0.82,
+      roughness: 0.25,
+    });
+
+    const totalSegs = 16;
+    for (let i = 0; i < totalSegs; i++) {
+      const seg = new THREE.Group();
+
+      if (i === 0) {
+        // 威严像素冰霜龙头（吻部、发光冰瞳、双鎏金长龙角）
+        const cranium = new THREE.Mesh(new THREE.BoxGeometry(2.3, 2.0, 2.6), scaleMat);
+        const snout = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.2, 2.2), scaleMat);
+        snout.position.set(0, -0.2, 2.1);
+        const jaw = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.5, 1.8), bellyMat);
+        jaw.position.set(0, -0.85, 1.8);
+
+        const eyeL = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.42, 0.55), glowIceMat);
+        eyeL.position.set(1.05, 0.3, 0.9);
+        const eyeR = eyeL.clone();
+        eyeR.position.x = -1.05;
+
+        const hornL = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.45, 3.2), hornGoldMat);
+        hornL.position.set(0.85, 1.35, -1.2);
+        hornL.rotation.x = 0.48;
+        hornL.rotation.y = 0.22;
+        const hornR = hornL.clone();
+        hornR.position.x = -0.85;
+        hornR.rotation.y = -0.22;
+
+        seg.add(cranium, snout, jaw, eyeL, eyeR, hornL, hornR);
+      } else {
+        const taper = 1 - (i / totalSegs) * 0.68;
+        const w = 2.0 * taper;
+        const h = 1.8 * taper;
+        const body = new THREE.Mesh(new THREE.BoxGeometry(w, h, 2.3), scaleMat);
+        const belly = new THREE.Mesh(new THREE.BoxGeometry(w * 0.8, 0.45 * taper, 2.1), bellyMat);
+        belly.position.y = -h * 0.5;
+
+        // 发光极寒冰晶背鳍
+        const crest = new THREE.Mesh(
+          new THREE.BoxGeometry(0.35, 1.25 * taper + 0.35, 1.2),
+          i % 2 === 0 ? glowIceMat : hornGoldMat
+        );
+        crest.position.y = h * 0.65;
+        seg.add(body, belly, crest);
+
+        // 第 2 节挂载巨大像素冰晶双翼！
+        if (i === 2) {
+          const createWing = (dir: 1 | -1) => {
+            const pivot = new THREE.Group();
+            pivot.position.set(dir * 1.0, 0.4, 0);
+
+            const bone1 = new THREE.Mesh(new THREE.BoxGeometry(5.5, 0.45, 0.55), hornGoldMat);
+            bone1.position.set(dir * 2.75, 0.5, 0.4);
+            bone1.rotation.z = dir * 0.15;
+
+            const bone2 = new THREE.Mesh(new THREE.BoxGeometry(5.2, 0.38, 0.45), scaleMat);
+            bone2.position.set(dir * 7.6, 0.8, -0.3);
+            bone2.rotation.y = -dir * 0.22;
+
+            // 阶梯状像素发光冰翼膜
+            const pane1 = new THREE.Mesh(new THREE.BoxGeometry(5.0, 0.18, 3.6), wingMembraneMat);
+            pane1.position.set(dir * 2.8, 0.35, -1.3);
+            const pane2 = new THREE.Mesh(new THREE.BoxGeometry(4.8, 0.18, 2.8), wingMembraneMat);
+            pane2.position.set(dir * 7.4, 0.65, -1.5);
+
+            pivot.add(bone1, bone2, pane1, pane2);
+            return pivot;
+          };
+          this.dragonLeftWing = createWing(1);
+          this.dragonRightWing = createWing(-1);
+          seg.add(this.dragonLeftWing, this.dragonRightWing);
+        }
+
+        // 龙尾末端星芒冰刃
+        if (i === totalSegs - 1) {
+          const tailBlade = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.3, 2.8), glowIceMat);
+          tailBlade.position.z = -1.6;
+          seg.add(tailBlade);
+        }
+      }
+
+      this.group.add(seg);
+      this.dragonSegments.push(seg);
+    }
+  }
+
+  /** 构建高空巡天「皇家三桅魔导浮空云船」 */
+  private buildGrandSkyGalleon(): void {
+    this.skyGalleon = new THREE.Group();
+
+    const hullWood = new THREE.MeshStandardMaterial({ color: '#7a4e32', roughness: 0.8 });
+    const deckWood = new THREE.MeshStandardMaterial({ color: '#c49060', roughness: 0.75 });
+    const royalBlue = new THREE.MeshStandardMaterial({ color: '#3b73d9', roughness: 0.5 });
+    const goldTrim = new THREE.MeshStandardMaterial({
+      color: '#ffd166',
+      emissive: '#ffae2b',
+      emissiveIntensity: 0.35,
+      roughness: 0.3,
+    });
+    const sailCloth = new THREE.MeshStandardMaterial({
+      color: '#fffcf5',
+      emissive: '#ffe8d6',
+      emissiveIntensity: 0.18,
+      roughness: 0.65,
+    });
+    const manaGlow = new THREE.MeshBasicMaterial({ color: '#69f0ff' });
+
+    // 层叠像素船体龙骨与甲板（沿 +Z 为船头方向）
+    const keel = new THREE.Mesh(new THREE.BoxGeometry(3.2, 1.4, 12.5), hullWood);
+    keel.position.y = -1.2;
+    const midHull = new THREE.Mesh(new THREE.BoxGeometry(4.8, 1.8, 15.0), hullWood);
+    midHull.position.y = 0.2;
+    const blueStripe = new THREE.Mesh(new THREE.BoxGeometry(5.0, 0.65, 15.2), royalBlue);
+    blueStripe.position.y = 0.6;
+    const deck = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.4, 14.6), deckWood);
+    deck.position.y = 1.2;
+
+    // 船尾皇家舰长楼与暖光尾灯 + 船头鎏金撞角斜桅
+    const sternCabin = new THREE.Mesh(new THREE.BoxGeometry(4.4, 2.4, 4.2), hullWood);
+    sternCabin.position.set(0, 2.4, -5.4);
+    const sternTrim = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.45, 4.4), goldTrim);
+    sternTrim.position.set(0, 3.7, -5.4);
+    const sternLantern = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.2, 0.9), manaGlow);
+    sternLantern.position.set(0, 3.2, -7.8);
+
+    const bowsprit = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 5.2), goldTrim);
+    bowsprit.position.set(0, 1.9, 9.2);
+    bowsprit.rotation.x = -0.28;
+
+    // 船底浮空蓝水晶引擎核
+    const manaCore = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.9, 6.5), manaGlow);
+    manaCore.position.y = -2.0;
+
+    this.skyGalleon.add(
+      keel,
+      midHull,
+      blueStripe,
+      deck,
+      sternCabin,
+      sternTrim,
+      sternLantern,
+      bowsprit,
+      manaCore
+    );
+
+    // 三根高耸木桅杆与鼓风弧形像素白帆
+    const mastSpecs: [number, number, number][] = [
+      [4.2, 8.5, 5.6],  // 前桅
+      [-0.2, 10.5, 7.0], // 主桅
+      [-4.8, 7.8, 4.8], // 后桅
+    ];
+    for (const [mz, mh, sw] of mastSpecs) {
+      const mast = new THREE.Mesh(new THREE.BoxGeometry(0.45, mh, 0.45), hullWood);
+      mast.position.set(0, 1.2 + mh * 0.5, mz);
+      const sail = new THREE.Mesh(new THREE.BoxGeometry(sw, mh * 0.58, 0.45), sailCloth);
+      sail.position.set(0, 2.2 + mh * 0.45, mz + 0.45);
+      const flag = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.55, 0.18), goldTrim);
+      flag.position.set(0.8, 1.4 + mh, mz);
+      this.skyGalleon.add(mast, sail, flag);
+    }
+
+    // 两侧各 3 支划动的发光魔导浮空光翼桨
+    for (const side of [-1, 1]) {
+      for (let k = 0; k < 3; k++) {
+        const pivot = new THREE.Group();
+        pivot.position.set(side * 2.5, 0.5, -2.5 + k * 3.0);
+        const blade = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.22, 1.1), manaGlow);
+        blade.position.x = side * 1.8;
+        pivot.add(blade);
+        this.skyGalleon.add(pivot);
+        this.galleonOars.push({ pivot, side, phase: k * 0.9 });
+      }
+    }
+
+    this.group.add(this.skyGalleon);
   }
 }

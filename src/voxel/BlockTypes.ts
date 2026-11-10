@@ -58,6 +58,13 @@ export enum BlockId {
   RAINBOW_CYAN = 45,
   RAINBOW_BLUE = 46,
   RAINBOW_VIOLET = 47,
+
+  // 九霄凌霄冰霜神殿建材
+  FROST_BRICK = 48,      // 凛冬寒冰玉砖
+  DARK_ABYSS_ICE = 49,   // 寒渊玄冰镶金石
+  FROST_PILLAR = 50,     // 极地冰棱竖柱
+  FROST_RUNE_GLOW = 51,  // 极寒星髓发光符文晶
+  GLACIER_ICE = 52,      // 半透明极光琉璃冰刺
 }
 
 export type RenderLayer = 'opaque' | 'emissive' | 'night_window' | 'transparent';
@@ -126,6 +133,12 @@ export const TileIndex = {
   RAINBOW_C: 48,
   RAINBOW_B: 49,
   RAINBOW_V: 50,
+  FROST_BRICK: 51,
+  DARK_ABYSS_ICE: 52,
+  FROST_PILLAR_SIDE: 53,
+  FROST_PILLAR_TOP: 54,
+  FROST_RUNE_GLOW: 55,
+  GLACIER_ICE: 56,
 } as const;
 
 const T = TileIndex;
@@ -510,6 +523,48 @@ export const BLOCK_DEFS: Record<number, BlockDef> = {
     tiles: [T.RAINBOW_V, T.RAINBOW_V, T.RAINBOW_V],
     occludes: false,
     swatch: '#c48aff',
+  },
+
+  // 凌霄冰霜神殿专属方块
+  [BlockId.FROST_BRICK]: {
+    id: BlockId.FROST_BRICK,
+    name: '凛冬寒冰砖',
+    layer: 'opaque',
+    tiles: [T.FROST_BRICK, T.FROST_BRICK, T.FROST_BRICK],
+    occludes: true,
+    swatch: '#cbeeff',
+  },
+  [BlockId.DARK_ABYSS_ICE]: {
+    id: BlockId.DARK_ABYSS_ICE,
+    name: '寒渊星曜石',
+    layer: 'opaque',
+    tiles: [T.DARK_ABYSS_ICE, T.DARK_ABYSS_ICE, T.DARK_ABYSS_ICE],
+    occludes: true,
+    swatch: '#2c4278',
+  },
+  [BlockId.FROST_PILLAR]: {
+    id: BlockId.FROST_PILLAR,
+    name: '极地冰棱柱',
+    layer: 'opaque',
+    tiles: [T.FROST_PILLAR_TOP, T.FROST_PILLAR_SIDE, T.FROST_PILLAR_TOP],
+    occludes: true,
+    swatch: '#e3f7ff',
+  },
+  [BlockId.FROST_RUNE_GLOW]: {
+    id: BlockId.FROST_RUNE_GLOW,
+    name: '极寒星髓核',
+    layer: 'emissive',
+    tiles: [T.FROST_RUNE_GLOW, T.FROST_RUNE_GLOW, T.FROST_RUNE_GLOW],
+    occludes: true,
+    swatch: '#7af5ff',
+  },
+  [BlockId.GLACIER_ICE]: {
+    id: BlockId.GLACIER_ICE,
+    name: '极光琉璃冰',
+    layer: 'transparent',
+    tiles: [T.GLACIER_ICE, T.GLACIER_ICE, T.GLACIER_ICE],
+    occludes: false,
+    swatch: '#73d7ff',
   },
 };
 

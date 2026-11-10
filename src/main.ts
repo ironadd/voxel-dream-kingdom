@@ -49,17 +49,17 @@ async function bootstrap() {
     48,
     window.innerWidth / window.innerHeight,
     0.4,
-    650
+    980
   );
-  camera.position.set(58, 52, 78);
+  camera.position.set(64, 46, 86);
 
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.dampingFactor = 0.065;
-  controls.maxDistance = 185;
+  controls.maxDistance = 240;
   controls.minDistance = 8;
-  controls.maxPolarAngle = Math.PI * 0.62; // 允许稍微仰视浮空岛底部巨型飞行蓝水晶！
-  controls.target.set(0, 22, -6);
+  controls.maxPolarAngle = Math.PI * 0.72; // 支持大角度抬头仰望九霄冰宫、极光与星环！
+  controls.target.set(0, 38, -24);
 
   // 电影感柔光辉光后处理
   const composer = new EffectComposer(renderer);
